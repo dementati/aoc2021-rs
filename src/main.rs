@@ -2,15 +2,34 @@ mod day1;
 mod common;
 
 use std::env;
+use std::fs;
+
+use aoc_helper::{AocDay, Puzzle};
 
 fn main() {
     let args: Vec<String> = env::args().collect();
-    let day = &args[1];
-    let star = &args[2];
-    let filename = &args[3];
-    
-    match day.as_str() {
-        "1" => day1::day1(star, filename),
-        _ => println!("Error: Unknown day!"),
+    let day_number = &args[1].parse::<u8>().unwrap();
+    let part_number = &args[2].parse::<u8>().unwrap();
+    let maybe_file = args.get(3);
+
+    run(*day_number, *part_number, maybe_file);
+}
+
+fn run(day_number: u8, part_number: u8, maybe_file: Option<&String>) {
+    let mut part = match day_number {
+        1 => Puzzle::new(part_number, day1::day1(part_number)),
+        _ => panic!("Unknown day!"),
+    };
+
+    let mut day = AocDay::new(2021, day_number);
+
+    if let Some(file) = maybe_file {
+        let contents = fs::read_to_string(file)
+            .expect("Can't read test file!");
+
+        part.examples(&[contents]);
+        day.test(&part);
+    } else {
+        day.run(&part).expect("Failed to run!");
     }
 }
