@@ -16,21 +16,21 @@ fn main() {
 }
 
 fn run(day_number: u8, part_number: u8, maybe_file: Option<&String>) {
-    let mut part = puzzle(day_number, part_number);
+    let mut puzzle = get_puzzle(day_number, part_number);
     let mut day = AocDay::new(2021, day_number);
 
     if let Some(file) = maybe_file {
         let contents = fs::read_to_string(file)
             .expect("Can't read test file!");
 
-        part.examples(&[contents]);
-        day.test(&part);
+        puzzle.examples(&[contents]);
+        day.test(&puzzle);
     } else {
-        day.run(&part).expect("Failed to run!");
+        day.run(&puzzle).expect("Failed to run!");
     }
 }
 
-fn puzzle(day_number: u8, part_number: u8) -> Puzzle<String, usize> {
+fn get_puzzle(day_number: u8, part_number: u8) -> Puzzle<String, usize> {
     match day_number {
         1 => Puzzle::new(part_number, day1::solver(part_number)),
         _ => panic!("Unknown day!"),
