@@ -1,5 +1,5 @@
-mod day1;
 mod common;
+mod day1;
 
 use std::env;
 use std::fs;
@@ -16,11 +16,7 @@ fn main() {
 }
 
 fn run(day_number: u8, part_number: u8, maybe_file: Option<&String>) {
-    let mut part = match day_number {
-        1 => Puzzle::new(part_number, day1::day1(part_number)),
-        _ => panic!("Unknown day!"),
-    };
-
+    let mut part = puzzle(day_number, part_number);
     let mut day = AocDay::new(2021, day_number);
 
     if let Some(file) = maybe_file {
@@ -31,5 +27,12 @@ fn run(day_number: u8, part_number: u8, maybe_file: Option<&String>) {
         day.test(&part);
     } else {
         day.run(&part).expect("Failed to run!");
+    }
+}
+
+fn puzzle(day_number: u8, part_number: u8) -> Puzzle<String, usize> {
+    match day_number {
+        1 => Puzzle::new(part_number, day1::solver(part_number)),
+        _ => panic!("Unknown day!"),
     }
 }

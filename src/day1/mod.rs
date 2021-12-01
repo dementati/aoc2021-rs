@@ -2,7 +2,7 @@ use itertools::izip;
 
 use crate::common;
 
-pub fn day1(star: u8) -> fn(String) -> usize {
+pub fn solver(star: u8) -> fn(String) -> usize {
     match star {
         1 => star1,
         2 => star2,
