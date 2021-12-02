@@ -11,7 +11,7 @@ pub fn solver(star: u8) -> fn(String) -> i32 {
 }
 
 fn star1(input: String) -> i32 {
-    let depths = common::read_integers(&input);
+    let depths = common::read_integers(&input).unwrap();
 
     izip!(&depths, &depths[1..])
         .filter(|(d1, d2)| d1 < d2)
@@ -19,7 +19,7 @@ fn star1(input: String) -> i32 {
 }
 
 fn star2(input: String) -> i32 {
-    let depths = common::read_integers(&input);
+    let depths = common::read_integers(&input).unwrap();
 
     izip!(&depths, &depths[3..])
         .filter(|(d1, d2)| d1 < d2)

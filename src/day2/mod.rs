@@ -9,7 +9,7 @@ pub fn solver(star: u8) -> fn(String) -> i32 {
 }
 
 fn star1(input: String) -> i32 {
-    let (x, y) = common::read_labeled_integers(&input)
+    let (x, y) = common::read_labeled_integers(&input).unwrap()
         .into_iter()
         .map(|(label, value)| match label {
             "forward" => (value, 0),
@@ -25,7 +25,7 @@ fn star1(input: String) -> i32 {
 fn star2(input: String) -> i32 {
     let mut aim = 0;
     let mut cur_pos = (0, 0);
-    for (label, value) in common::read_labeled_integers(&input) {
+    for (label, value) in common::read_labeled_integers(&input).unwrap() {
         match label {
             "forward" => { 
                 let (x, y) = cur_pos;
