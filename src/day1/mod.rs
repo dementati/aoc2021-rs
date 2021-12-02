@@ -26,7 +26,6 @@ fn star2(input: String) -> i32 {
         .collect();
 
     izip!(&sums, &sums[1..])
-        .map(|(d1, d2)| d2 - d1)
-        .filter(|d| d > &0)
-        .count() as i32
+        .filter(|(d1, d2)| d1 < d2)
+        .count() as _
 }
