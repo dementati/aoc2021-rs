@@ -3,7 +3,7 @@ use regex::Regex;
 pub fn read_integers(input: &str) -> Vec<i32> {
     input.split("\n")
         .filter(|line| !line.is_empty())
-        .map(|line| line.parse::<i32>().unwrap())
+        .map(|line| line.parse().unwrap())
         .collect()
 }
 
@@ -15,7 +15,7 @@ pub fn read_labeled_integers(input: &str) -> Vec<(&str, i32)> {
         .map(|line| re.captures(line).unwrap())
         .map(|caps| (
             caps.get(1).unwrap().as_str(), 
-            caps.get(2).unwrap().as_str().parse::<i32>().unwrap(),
+            caps.get(2).unwrap().as_str().parse().unwrap(),
         ))
         .collect()
 }
