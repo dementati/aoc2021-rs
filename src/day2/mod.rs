@@ -9,20 +9,15 @@ pub fn solver(star: u8) -> fn(String) -> i32 {
 }
 
 fn star1(input: String) -> i32 {
-    let items: Vec<_> = common::read_labeled_integers(&input);
-
-    let x: i32 = items.clone().into_iter()
-        .filter(|(label, _)| *label == "forward")
-        .map(|(_, value)| value)
-        .sum();
-
-    let y: i32 = items.into_iter()
+    let (x, y) = common::read_labeled_integers(&input)
+        .into_iter()
         .map(|(label, value)| match label {
-            "up" => -(value as i32),
-            "down" => value as i32,
-            _ => 0,
+            "forward" => (value, 0),
+            "up" => (0, -value),
+            "down" => (0, value),
+            _ => panic!("Unknown label"),
         })
-        .sum();
+        .fold((0, 0), |(sx, sy), (x, y)| (sx + x, sy + y));
 
     x * y
 }
