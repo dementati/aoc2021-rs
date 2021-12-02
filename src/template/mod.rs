@@ -1,8 +1,6 @@
-use itertools::izip;
-
 use crate::common;
 
-pub fn solver(star: u8) -> fn(String) -> usize {
+pub fn solver(star: u8) -> fn(String) -> i32 {
     match star {
         1 => star1,
         2 => star2,
@@ -10,10 +8,10 @@ pub fn solver(star: u8) -> fn(String) -> usize {
     }
 }
 
-fn star1(input: String) -> usize {
+fn star1(input: String) -> i32 {
     0
 }
 
-fn star2(input: String) -> usize {
+fn star2(input: String) -> i32 {
     0
 }
