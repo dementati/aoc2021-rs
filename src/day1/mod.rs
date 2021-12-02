@@ -21,11 +21,7 @@ fn star1(input: String) -> i32 {
 fn star2(input: String) -> i32 {
     let depths = common::read_integers(&input);
 
-    let sums: Vec<_> = izip!(&depths, &depths[1..], &depths[2..])
-        .map(|(a, b, c)| a + b + c)
-        .collect();
-
-    izip!(&sums, &sums[1..])
+    izip!(&depths, &depths[3..])
         .filter(|(d1, d2)| d1 < d2)
         .count() as _
 }
