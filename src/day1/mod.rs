@@ -14,9 +14,8 @@ fn star1(input: String) -> i32 {
     let depths = common::read_integers(&input);
 
     izip!(&depths, &depths[1..])
-        .map(|(d1, d2)| d2 - d1)
-        .filter(|d| d > &0)
-        .count() as i32
+        .filter(|(d1, d2)| d1 < d2)
+        .count() as _
 }
 
 fn star2(input: String) -> i32 {
