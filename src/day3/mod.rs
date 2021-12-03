@@ -29,7 +29,7 @@ fn star1(input: String) -> i32 {
         .collect::<String>();
     let gamma = i32::from_str_radix(&gamma, 2).unwrap();
 
-    gamma * gamma ^ 4095
+    gamma * (gamma ^ 4095)
 }
 
 fn star2(input: String) -> i32 {
