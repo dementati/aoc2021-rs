@@ -18,10 +18,10 @@ fn star1(input: String) -> i32 {
         for (i, &v) in boards.iter().enumerate() {
             if draw == v {
                 marked[i] = true;
-                if let Some(board) = check(&marked) {
-                    return score(&boards, &marked, board, draw);
-                }
             }
+        }
+        if let Some(board) = check(&marked) {
+            return score(&boards, &marked, board, draw);
         }
     }
 
@@ -90,13 +90,13 @@ fn star2(input: String) -> i32 {
         for (i, &v) in boards.iter().enumerate() {
             if draw == v {
                 marked[i] = true;
-                let result = check_all(&marked, &winners);
-                winners = result.0;
-                let last_winner = result.1;
-                if winners.len() == board_count {
-                    return score(&boards, &marked, last_winner, draw);
-                }
             }
+        }
+        let result = check_all(&marked, &winners);
+        winners = result.0;
+        let last_winner = result.1;
+        if winners.len() == board_count {
+            return score(&boards, &marked, last_winner, draw);
         }
     }
 
