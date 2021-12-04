@@ -11,16 +11,7 @@ pub fn solver(star: u8) -> fn(String) -> i32 {
 }
 
 fn star1(input: String) -> i32 {
-    let input: Vec<_> = input.split_whitespace()
-        .collect();
-
-    let draws: Vec<u16> = input[0].split(',')
-        .map(|s| s.parse().unwrap())
-        .collect();
-    let boards: &Vec<u16> = &input[1..].iter()
-        .map(|s| s.parse().unwrap())
-        .collect();
-
+    let (draws, boards) = parse_input(&input);
     let mut marked = vec![false; boards.len()];
 
     for &draw in draws.iter() {
@@ -28,13 +19,28 @@ fn star1(input: String) -> i32 {
             if draw == v {
                 marked[i] = true;
                 if let Some(board) = check(&marked) {
-                    return score(boards, &marked, board, draw);
+                    return score(&boards, &marked, board, draw);
                 }
             }
         }
     }
 
     panic!("Couldn't find winning board")
+}
+
+fn parse_input(input: &str) -> (Vec<u16>, Vec<u16>) {
+    let input: Vec<_> = input.split_whitespace()
+        .collect();
+
+    let draws: Vec<u16> = input[0].split(',')
+        .map(|s| s.parse().unwrap())
+        .collect();
+    let boards: Vec<u16> = input[1..].iter()
+        .cloned()
+        .map(|s| s.parse().unwrap())
+        .collect();
+
+    (draws, boards)
 }
 
 fn at<T>(boards: &Vec<T>, board: u16, row: u16, col: u16) -> &T {
@@ -75,18 +81,8 @@ fn score(
 }
 
 fn star2(input: String) -> i32 {
-    let input: Vec<_> = input.split_whitespace()
-        .collect();
-
-    let draws: Vec<u16> = input[0].split(',')
-        .map(|s| s.parse().unwrap())
-        .collect();
-    let boards: &Vec<u16> = &input[1..].iter()
-        .map(|s| s.parse().unwrap())
-        .collect();
-
+    let (draws, boards) = parse_input(&input);
     let board_count = boards.len() / 25;
-
     let mut marked = vec![false; boards.len()];
     let mut winners = HashSet::new();
 
@@ -98,7 +94,7 @@ fn star2(input: String) -> i32 {
                 winners = result.0;
                 let last_winner = result.1;
                 if winners.len() == board_count {
-                    return score(boards, &marked, last_winner, draw);
+                    return score(&boards, &marked, last_winner, draw);
                 }
             }
         }
