@@ -67,11 +67,10 @@ fn score(
     board: u16, 
     winning_draw: u16
 ) -> i32 {
-    let unmarked: Vec<u16> = (0..5).cartesian_product(0..5)
+    let unmarked_sum: u16 = (0..5).cartesian_product(0..5)
         .filter(|(row, col)| !*at(marked, board, *row, *col))
         .map(|(row, col)| *at(boards, board, row, col))
-        .collect();
-    let unmarked_sum: u16 = unmarked.iter().sum();
+        .sum();
     (unmarked_sum * winning_draw) as i32
 }
 
