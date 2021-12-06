@@ -2,7 +2,7 @@ use itertools::izip;
 
 use crate::common;
 
-pub fn solver(star: u8) -> fn(String) -> i32 {
+pub fn solver(star: u8) -> fn(String) -> i128 {
     match star {
         1 => star1,
         2 => star2,
@@ -10,7 +10,7 @@ pub fn solver(star: u8) -> fn(String) -> i32 {
     }
 }
 
-fn star1(input: String) -> i32 {
+fn star1(input: String) -> i128 {
     let depths = common::read_integers(&input).unwrap();
 
     izip!(&depths, &depths[1..])
@@ -18,7 +18,7 @@ fn star1(input: String) -> i32 {
         .count() as _
 }
 
-fn star2(input: String) -> i32 {
+fn star2(input: String) -> i128 {
     let depths = common::read_integers(&input).unwrap();
 
     izip!(&depths, &depths[3..])

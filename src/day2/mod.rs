@@ -1,6 +1,6 @@
 use crate::common;
 
-pub fn solver(star: u8) -> fn(String) -> i32 {
+pub fn solver(star: u8) -> fn(String) -> i128 {
     match star {
         1 => star1,
         2 => star2,
@@ -8,7 +8,7 @@ pub fn solver(star: u8) -> fn(String) -> i32 {
     }
 }
 
-fn star1(input: String) -> i32 {
+fn star1(input: String) -> i128 {
     let (x, y) = common::read_labeled_integers(&input).unwrap()
         .into_iter()
         .map(|(label, value)| match label {
@@ -22,7 +22,7 @@ fn star1(input: String) -> i32 {
     x * y
 }
 
-fn star2(input: String) -> i32 {
+fn star2(input: String) -> i128 {
     let mut aim = 0;
     let mut cur_pos = (0, 0);
     for (label, value) in common::read_labeled_integers(&input).unwrap() {

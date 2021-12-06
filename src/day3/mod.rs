@@ -1,6 +1,6 @@
 use itertools::izip;
 
-pub fn solver(star: u8) -> fn(String) -> i32 {
+pub fn solver(star: u8) -> fn(String) -> i128 {
     match star {
         1 => star1,
         2 => star2,
@@ -8,7 +8,7 @@ pub fn solver(star: u8) -> fn(String) -> i32 {
     }
 }
 
-fn star1(input: String) -> i32 {
+fn star1(input: String) -> i128 {
     let lines: Vec<&str> = input.split_whitespace().collect();
     let total = lines.len() as u32;
     let counts: Vec<u32> = lines.iter()
@@ -27,12 +27,12 @@ fn star1(input: String) -> i32 {
     let gamma = counts.iter()
         .map(|&c| if c > total / 2 { '1' } else { '0' })
         .collect::<String>();
-    let gamma = i32::from_str_radix(&gamma, 2).unwrap();
+    let gamma = i128::from_str_radix(&gamma, 2).unwrap();
 
     gamma * (gamma ^ 4095)
 }
 
-fn star2(input: String) -> i32 {
+fn star2(input: String) -> i128 {
     let bit_strs: Vec<Vec<u32>> = input
         .split_whitespace()
         .map(|line| 
@@ -45,12 +45,10 @@ fn star2(input: String) -> i32 {
     let ogr = find_rating(bit_strs.clone(), true, 0);
     let csr = find_rating(bit_strs.clone(), false, 0);
     
-    println!("ogr: {}, csr: {}", ogr, csr);
-
     ogr * csr
 }
 
-fn find_rating(bit_strs: Vec<Vec<u32>>, most_common: bool, i: usize) -> i32 {
+fn find_rating(bit_strs: Vec<Vec<u32>>, most_common: bool, i: usize) -> i128 {
     let count: u32 = bit_strs.iter()
         .map(|v| v[i])
         .sum();
@@ -72,9 +70,9 @@ fn find_rating(bit_strs: Vec<Vec<u32>>, most_common: bool, i: usize) -> i32 {
     }  
 }
 
-fn to_decimal(bit_str: &Vec<u32>) -> i32 {
+fn to_decimal(bit_str: &Vec<u32>) -> i128 {
     let s: String = bit_str.iter()
         .map(|&i| char::from_digit(i, 2).unwrap())
         .collect();
-    i32::from_str_radix(&s, 2).unwrap()
+    i128::from_str_radix(&s, 2).unwrap()
 }

@@ -2,7 +2,7 @@ use std::collections::HashSet;
 
 use itertools::Itertools;
 
-pub fn solver(star: u8) -> fn(String) -> i32 {
+pub fn solver(star: u8) -> fn(String) -> i128 {
     match star {
         1 => star1,
         2 => star2,
@@ -10,7 +10,7 @@ pub fn solver(star: u8) -> fn(String) -> i32 {
     }
 }
 
-fn star1(input: String) -> i32 {
+fn star1(input: String) -> i128 {
     let (draws, boards) = parse_input(&input);
     let mut marked = vec![false; boards.len()];
 
@@ -72,15 +72,15 @@ fn score(
     marked: &Vec<bool>, 
     board: u16, 
     winning_draw: u16
-) -> i32 {
+) -> i128 {
     let unmarked_sum: u16 = (0..5).cartesian_product(0..5)
         .filter(|(row, col)| !*at(marked, board, *row, *col))
         .map(|(row, col)| *at(boards, board, row, col))
         .sum();
-    (unmarked_sum * winning_draw) as i32
+    (unmarked_sum * winning_draw) as i128
 }
 
-fn star2(input: String) -> i32 {
+fn star2(input: String) -> i128 {
     let (draws, boards) = parse_input(&input);
     let board_count = boards.len() / 25;
     let mut marked = vec![false; boards.len()];

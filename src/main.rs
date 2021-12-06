@@ -35,7 +35,7 @@ fn run(day_number: u8, part_number: u8, maybe_file: Option<&String>) {
     }
 }
 
-fn create_puzzle(day_number: u8, part_number: u8) -> Puzzle<String, i32> {
+fn create_puzzle(day_number: u8, part_number: u8) -> Puzzle<String, i128> {
     match day_number {
         1 => Puzzle::new(part_number, day1::solver(part_number)),
         2 => Puzzle::new(part_number, day2::solver(part_number)),
