@@ -16,3 +16,4 @@ Cargo.lock
 aoc_helper.toml
 /inputs
 **/test.txt
+**/massif.out.*

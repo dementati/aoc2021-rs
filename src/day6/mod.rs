@@ -1,3 +1,4 @@
+use num::{BigInt, Zero};
 
 pub fn solver(star: u8) -> fn(String) -> i128 {
     match star {
@@ -9,12 +10,12 @@ pub fn solver(star: u8) -> fn(String) -> i128 {
 
 fn star1(input: String) -> i128 {
     let data = parse_input(&input);
-    evolve(&data, 1, 80)
+    evolve(&data, 80)
 }
 
 fn star2(input: String) -> i128 {
     let data = parse_input(&input);
-    evolve(&data, 1, 256)
+    evolve(&data, 256)
 }
 
 fn parse_input(input: &str) -> Vec<i128> {
@@ -31,16 +32,43 @@ fn parse_input(input: &str) -> Vec<i128> {
     data
 }
 
-fn evolve(data: &Vec<i128>, gen: i128, max_gen: i128) -> i128 {
-    let mut new_data = vec![0; 9];
-    for i in 1..=8 {
-        new_data[i-1] = data[i];
-    }
-    new_data[8] = data[0];
-    new_data[6] += data[0];
+fn parse_input_big(input: &str) -> Vec<BigInt> {
+    let input: Vec<u8> = input.split(",")
+        .map(|s| s.parse().unwrap())
+        .collect();
 
-    match gen {
-        _ if (gen == max_gen) => new_data.iter().sum::<i128>(),
-        _ => evolve(&new_data, gen + 1, max_gen),
+    let mut data = vec![Zero::zero(); 9];
+
+    for &v in input.iter() {
+        let i = v as usize;
+        data[i] += 1;
     }
+
+    data
+}
+
+fn evolve(data: &Vec<i128>, max_gen: i128) -> i128 {
+    let mut data = data.clone();
+    let mut i0 = 0;
+    for _ in 0..max_gen {
+        let new = data[i0];
+        i0 = (i0 + 1) % 9;
+        data[(i0 + 8) % 9] = new;
+        data[(i0 + 6) % 9] += new;
+    }
+
+    data.iter().sum()
+}
+
+fn evolve_big(data: &Vec<BigInt>, max_gen: i128) -> BigInt {
+    let mut data = data.clone();
+    let mut i0 = 0;
+    for _ in 0..max_gen {
+        let new = data[i0].clone();
+        i0 = (i0 + 1) % 9;
+        data[(i0 + 6) % 9] += &new;
+        data[(i0 + 8) % 9] = new;
+    }
+
+    data.iter().sum()
 }
