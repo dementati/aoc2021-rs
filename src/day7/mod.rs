@@ -61,6 +61,10 @@ fn star2(input: String) -> i128 {
 
 fn score2(positions: &Vec<i128>, target: i128) -> i128 {
     positions.iter() 
-        .map(|c| (1..=(c - target).abs()).sum::<i128>())
+        .map(|c| triangle((c - target).abs()))
         .sum()
+}
+
+fn triangle(n: i128) -> i128 {
+    n * (n + 1) / 2
 }
