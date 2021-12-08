@@ -24,7 +24,7 @@ fn star2(input: String) -> i128 {
 }
 
 #[allow(dead_code)]
-fn star2_2(input: &str) -> i128 {
+fn star2_2(input: String) -> i128 {
     input.split("\n")
         .map(|line| {
             let (d, o) = line.split("|")
