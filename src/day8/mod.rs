@@ -1,4 +1,6 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
+
+use itertools::Itertools;
 
 pub fn solver(star: u8) -> fn(String) -> i128 {
     match star {
@@ -18,6 +20,39 @@ fn star1(input: String) -> i128 {
 fn star2(input: String) -> i128 {
     input.split("\n")
         .map(|line| parse(line))
+        .sum()
+}
+
+#[allow(dead_code)]
+fn star2_2(input: &str) -> i128 {
+    input.split("\n")
+        .map(|line| {
+            let (d, o) = line.split("|")
+                .tuples::<(&str, &str)>()
+                .next()
+                .unwrap();
+
+            let d: HashMap<usize, HashSet<char>> = d.split_whitespace()
+                .map(|s| (s.len(), s.chars().collect()))
+                .collect();
+
+            o.split_whitespace()
+                .map(|s| s.chars().collect::<HashSet<char>>())
+                .map(|s| match (s.len(), s.intersection(&d[&4]).count(), s.intersection(&d[&2]).count()) {
+                    (2, _, _) => 1,
+                    (3, _, _) => 7,
+                    (4, _, _) => 4,
+                    (7, _, _) => 8,
+                    (5, 2, _) => 2,
+                    (5, 3, 1) => 5,
+                    (5, 3, 2) => 3,
+                    (6, 4, _) => 9,
+                    (6, 3, 1) => 6,
+                    (6, 3, 2) => 0,
+                    _ => panic!("Oh no!"),
+                })
+                .fold(0, |acc, i| acc * 10 + i)
+        })
         .sum()
 }
 

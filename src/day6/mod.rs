@@ -20,6 +20,7 @@ fn solve(input: &str, max_gen: usize) -> i128 {
     evolve(&parse_input(input), max_gen)
 }
 
+#[allow(dead_code)]
 fn solve_big(input: &str, max_gen: usize) -> BigInt {
     evolve_big(&parse_input_big(&input), max_gen)
 }
@@ -38,6 +39,7 @@ fn parse_input(input: &str) -> Vec<i128> {
     data
 }
 
+#[allow(dead_code)]
 fn parse_input_big(input: &str) -> Vec<BigInt> {
     let input: Vec<u8> = input.split(",")
         .map(|s| s.parse().unwrap())
@@ -61,6 +63,7 @@ fn evolve(data: &Vec<i128>, max_gen: usize) -> i128 {
     data.iter().sum()
 }
 
+#[allow(dead_code)]
 fn evolve_big(data: &Vec<BigInt>, max_gen: usize) -> BigInt {
     let mut data = data.clone();
     for i in 0..max_gen {

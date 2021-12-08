@@ -1,6 +1,5 @@
 use std::cmp;
 
-use average::Mean;
 use math::round;
 
 pub fn solver(star: u8) -> fn(String) -> i128 {
@@ -88,6 +87,7 @@ fn mean(positions: &mut Vec<i128>) -> i128 {
     round::half_up(tot as f64 / positions.len() as f64, 0) as i128
 }
 
+#[allow(dead_code)]
 fn median(positions: &mut Vec<i128>) -> i128 {
     positions.sort();
     let mid = positions.len() / 2;
