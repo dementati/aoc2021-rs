@@ -12,13 +12,7 @@ type Pos = (usize, usize);
 type Map = HashMap<Pos, u32>;
 
 fn star1(input: String) -> i128 {
-    let map: Map = input.split("\n").enumerate()
-        .flat_map(|(y, line)| 
-            line.chars()
-                .enumerate()
-                .map(move |(x, c)| ((x, y), c.to_digit(10).unwrap()))
-        )
-        .collect();
+    let map: Map = parse_map(&input);
 
     map.keys()
         .filter(|&pos| 
@@ -27,6 +21,16 @@ fn star1(input: String) -> i128 {
         )
         .map(|pos| map[pos] as i128 + 1)
         .sum::<i128>()
+}
+
+fn parse_map(input: &str) -> Map {
+    input.split("\n").enumerate()
+        .flat_map(|(y, line)| 
+            line.chars()
+                .enumerate()
+                .map(move |(x, c)| ((x, y), c.to_digit(10).unwrap()))
+        )
+        .collect()
 }
 
 fn neighbours(map: &Map, pos: Pos) -> HashSet<Pos> {
@@ -49,13 +53,7 @@ fn neighbours(map: &Map, pos: Pos) -> HashSet<Pos> {
 }
 
 fn star2(input: String) -> i128 {
-    let map: Map = input.split("\n").enumerate()
-        .flat_map(|(y, line)| 
-            line.chars()
-                .enumerate()
-                .map(move |(x, c)| ((x, y), c.to_digit(10).unwrap()))
-        )
-        .collect();
+    let map: Map = parse_map(&input);
 
     let mut basin_sizes: Vec<usize> = map.keys()
         .filter(|&pos| 
@@ -88,6 +86,5 @@ fn star2(input: String) -> i128 {
         .collect();
 
     basin_sizes.sort();
-
     basin_sizes.iter().rev().take(3).fold(1, |a, b| a * b) as i128
 }
