@@ -63,27 +63,27 @@ fn star2(input: String) -> i128 {
                 .all(|n| map[pos] < map[n])
         )
         .map(|&low| {
-            let mut basin: HashSet<Pos> = HashSet::new();
-            basin.insert(low);
-            loop {
-                let mut new_pos: HashSet<Pos> = HashSet::new();
-                for pos in basin.iter() {
+            let mut open: HashSet<Pos> = HashSet::new();
+            let mut closed: HashSet<Pos> = HashSet::new();
+            open.insert(low);
+            while open.len() > 0 {
+                let mut new_opened: HashSet<Pos> = HashSet::new();
+                let mut new_closed: HashSet<Pos> = HashSet::new();
+                for &pos in open.iter() {
                     let n: HashSet<Pos> = neighbours(&map, pos.clone()).iter()
-                        .filter(|n| map[n] != 9)
+                        .filter(|n| !closed.contains(n) && map[n] != 9)
                         .cloned()
                         .collect();
 
-                    new_pos = new_pos.union(&n).cloned().collect();
+                    new_closed.insert(pos);
+                    new_opened.extend(&n);
                 }
-
-                let prev_size = basin.len();
-                basin = basin.union(&new_pos).cloned().collect();
-                if basin.len() == prev_size {
-                    break;
-                }
+                closed.extend(&new_closed);
+                open.extend(&new_opened);
+                open = &open - &new_closed;
             }
 
-            basin.len()
+            closed.len()
         })
         .collect();
 
