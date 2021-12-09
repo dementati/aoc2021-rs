@@ -8,7 +8,7 @@ pub fn solver(star: u8) -> fn(String) -> i128 {
     }
 }
 
-type Pos = (usize, usize);
+type Pos = (i128, i128);
 type Map = HashMap<Pos, u32>;
 
 fn star1(input: String) -> i128 {
@@ -28,28 +28,17 @@ fn parse_map(input: &str) -> Map {
         .flat_map(|(y, line)| 
             line.chars()
                 .enumerate()
-                .map(move |(x, c)| ((x, y), c.to_digit(10).unwrap()))
+                .map(move |(x, c)| ((x as i128, y as i128), c.to_digit(10).unwrap()))
         )
         .collect()
 }
 
 fn neighbours(map: &Map, pos: Pos) -> HashSet<Pos> {
     let (x, y) = pos;
-    let mut result: HashSet<Pos> = HashSet::new();
-    if x > 0 && map.contains_key(&(x - 1, y)) {
-        result.insert((x - 1, y));
-    }
-    if map.contains_key(&(x + 1, y)) {
-        result.insert((x + 1, y));
-    }
-    if y > 0 && map.contains_key(&(x, y - 1)) {
-        result.insert((x, y - 1));
-    }
-    if map.contains_key(&(x, y + 1)) {
-        result.insert((x, y + 1));
-    }
-
-    result
+    [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)].iter()
+        .filter(|pos| map.contains_key(pos))
+        .cloned()
+        .collect()
 }
 
 fn star2(input: String) -> i128 {
