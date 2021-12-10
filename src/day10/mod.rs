@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 pub fn solver(star: u8) -> fn(String) -> i128 {
     match star {
         1 => star1,
@@ -15,10 +13,8 @@ fn star1(input: String) -> i128 {
 }
 
 fn score_error(line: &str) -> i128 {
-    let match_map: HashMap<char, char> = 
-        [(')', '('), ('}', '{'), (']', '['), ('>', '<')].into_iter().collect();
-    let score_map: HashMap<char, i128> = 
-        [(')', 3), ('}', 1197), (']', 57), ('>', 25137)].into_iter().collect();
+    let match_map = hashmap! { ')' => '(', '}' => '{', ']' => '[', '>' => '<'}; 
+    let score_map = hashmap! { ')' => 3, ']' => 57, '}' => 1197, '>' => 25137 };
 
     let mut stack: Vec<char> = Vec::new();
     for c in line.chars() {
@@ -47,10 +43,8 @@ fn star2(input: String) -> i128 {
 }
 
 fn score_complete(line: &str) -> i128 {
-    let match_map: HashMap<char, char> = 
-        [(')', '('), ('}', '{'), (']', '['), ('>', '<')].into_iter().collect();
-    let score_map: HashMap<char, i128> = 
-        [('(', 1), ('[', 2), ('{', 3), ('<', 4)].into_iter().collect();
+    let match_map = hashmap! { ')' => '(', '}' => '{', ']' => '[', '>' => '<'}; 
+    let score_map = hashmap! { '(' => 1, '[' => 2, '{' => 3, '<' => 4 };
 
     let mut stack: Vec<char> = Vec::new();
     for c in line.chars() {

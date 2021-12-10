@@ -1,3 +1,5 @@
+#[macro_use] extern crate maplit;
+
 mod common;
 mod day1;
 mod day2;
