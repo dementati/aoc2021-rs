@@ -26,7 +26,6 @@ fn score_error(line: &str) -> i128 {
             c if ['(', '[', '{', '<'].contains(&c) => stack.push(c),
             c if [')', ']', '}', '>'].contains(&c) => {
                 if match_map[&c] != stack.pop().unwrap() {
-                    println!("{}", line);
                     return score_map[&c];
                 }
             },
@@ -44,9 +43,6 @@ fn star2(input: String) -> i128 {
         .collect();
 
     scores.sort();
-
-    println!("{:?}", scores);
-
     scores[scores.len() / 2]
 }
 
@@ -62,16 +58,11 @@ fn score_complete(line: &str) -> i128 {
             c if ['(', '[', '{', '<'].contains(&c) => stack.push(c),
             c if [')', ']', '}', '>'].contains(&c) => {
                 if match_map[&c] != stack.pop().unwrap() {
-                    println!("{}", line);
                     return 0;
                 }
             },
             _ => unreachable!(),
         }
-    }
-
-    if stack.len() == 0 {
-        return 0;
     }
 
     let mut total = 0;
