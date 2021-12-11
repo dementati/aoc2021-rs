@@ -1,5 +1,3 @@
-use crate::common;
-
 pub fn solver(star: u8) -> fn(String) -> i128 {
     match star {
         1 => star1,
