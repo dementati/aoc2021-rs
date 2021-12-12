@@ -15,8 +15,7 @@ pub fn solver(star: u8) -> fn(String) -> i128 {
 
 fn star1(input: String) -> i128 {
     let graph = parse_input(&input);
-    let result = search(&graph, "start", HashSet::new(), Vec::new());
-    result.len() as i128
+    search(&graph, "start", hashset!{"start"}, false) as i128
 }
 
 fn parse_input(input: &str) -> Graph {
@@ -37,91 +36,40 @@ fn parse_input(input: &str) -> Graph {
     map
 }
 
-fn search<'a>(
-    graph: &'a Graph, 
-    node: &'a str, 
-    visited: HashSet<&str>, 
-    path: Vec<&'a str>
-) -> Vec<Vec<&'a str>> {
-    let to_visit: HashSet<_> = graph.get(node).unwrap_or_else(|| panic!("{} not found", node)).iter()
-                .filter(|&other| 
-                    !(other.chars().all(char::is_lowercase) && visited.contains(other as &str))
-                )
-                .collect();
+fn search(
+    graph: &Graph, 
+    node: &str, 
+    closed: HashSet<&str>,
+    bonus: bool,
+) -> i128 {
+    let mut count = 0;
+    for other in graph.get(node).unwrap() {
+        if other.eq("end") {
+            count += 1;
+            continue;
+        }
 
-    let mut result = Vec::new();
-    for other in to_visit.iter() {
-        let mut new_visited = visited.clone();
-        new_visited.insert(node);
-        let mut new_path = path.clone();
-        new_path.push(node);
+        if other.eq("start") {
+            continue;
+        }
 
-        if other.eq(&"end") {
-            new_path.push(other);
-            result.push(new_path);
+        if other.chars().all(char::is_lowercase) {
+            if !closed.contains(other as &str) {
+                let mut closed = closed.clone();
+                closed.insert(other);
+                count += search(graph, other, closed, bonus);
+            } else if bonus {
+                count += search(graph, other, closed.clone(), false);
+            }
         } else {
-            let new_result = search(graph, other, new_visited, new_path);
-            result.extend(new_result);
+            count += search(graph, other, closed.clone(), bonus);
         }
     }
 
-    result
+    count
 }
 
 fn star2(input: String) -> i128 {
     let graph = parse_input(&input);
-    let mut total_result = HashSet::new();
-    for double in get_small_caves(&graph) {
-        let result = search2(&graph, "start", HashSet::new(), Vec::new(), &double);
-        total_result.extend(result);
-    }
-
-    total_result.len() as i128
-}
-
-fn search2<'a>(
-    graph: &'a Graph, 
-    node: &'a str, 
-    visited: HashSet<&str>, 
-    path: Vec<&'a str>,
-    double: &str,
-) -> Vec<Vec<&'a str>> {
-    let to_visit: HashSet<_> = graph.get(node).unwrap_or_else(|| panic!("{} not found", node)).iter()
-                .filter(|&other| 
-                    !(other.chars().all(char::is_lowercase) && visited.contains(other as &str))
-                    ||
-                    (
-                        other.chars().all(char::is_lowercase) &&
-                        other.eq(double) &&
-                        path.iter()
-                            .filter(|&n| n.eq(other))
-                            .count() == 1
-                    )
-                )
-                .collect();
-
-    let mut result = Vec::new();
-    for other in to_visit.iter() {
-        let mut new_visited = visited.clone();
-        new_visited.insert(node);
-        let mut new_path = path.clone();
-        new_path.push(node);
-
-        if other.eq(&"end") {
-            new_path.push(other);
-            result.push(new_path);
-        } else {
-            let new_result = search2(graph, other, new_visited, new_path, double);
-            result.extend(new_result);
-        }
-    }
-
-    result
-}
-
-fn get_small_caves(graph: &Graph) -> Vec<String> {
-    graph.keys()
-        .filter(|k| !["start", "end"].contains(&k.as_str()) && k.chars().all(char::is_lowercase))
-        .cloned()
-        .collect()
+    search(&graph, "start", hashset!{"start"}, true) as i128
 }
