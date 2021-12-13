@@ -15,10 +15,7 @@ pub fn solver(star: u8) -> fn(String) -> i128 {
 
 fn star1(input: String) -> i128 {
     let (dots, folds) = parse_input(&input);
-
-    let dots = fold(dots, folds[0]);
-
-    dots.len() as i128
+    fold(dots, folds[0]).len() as i128
 }
 
 fn parse_input(input: &str) -> (HashSet<Pos>, Vec<Fold>) {
@@ -46,20 +43,8 @@ fn fold(dots: HashSet<Pos>, fold: Fold) -> HashSet<Pos> {
     dots.iter()
         .map(|(x, y)| 
             match c {
-                'x' => (
-                    if x > &v {
-                        let d = (x - v);
-                        v - d
-                    } else { *x }, 
-                    *y,
-                ),
-                'y' => (
-                    *x,
-                    if y > &v {
-                        let d = (y - v);
-                        (v - d)
-                    } else { *y }, 
-                ),
+                'x' => (if x > &v { 2*v - x } else { *x }, *y),
+                'y' => (*x, if y > &v { 2*v - y } else { *y }),
                 _ => unreachable!(),
             }
         )
