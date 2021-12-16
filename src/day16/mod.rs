@@ -13,25 +13,24 @@ struct Packet {
     ptype: i128,
     packets: Vec<Packet>,
     value: i128,
+    length: usize,
 }
 
 impl Packet {
-    fn parse(bit_str: &str, i: usize) -> (Packet, usize) {
-        let bytes = bit_str.as_bytes();
-        let mut i = i;
-        let version = i128::from_str_radix(&bit_str[i..(i+3)], 2).unwrap();
-        i += 3;
-        let ptype = i128::from_str_radix(&bit_str[i..(i+3)], 2).unwrap();
-        i += 3;
+    fn parse(bit_str: &mut std::str::Chars) -> Packet {
+        let version: String = bit_str.take(3).collect();
+        let version = i128::from_str_radix(&version, 2).unwrap();
+        let ptype: String = bit_str.take(3).collect();
+        let ptype = i128::from_str_radix(&ptype, 2).unwrap();
 
         match ptype {
             4 => {
                 let mut bits: Vec<char> = Vec::new();
-                for seg in &bit_str[i..].chars().chunks(5) {
-                    let seg: Vec<_> = seg.collect();
-                    let flag = seg[0];
-                    bits.extend(seg.iter().skip(1).take(4));
-                    i += 5;
+                let mut nibbles = 0;
+                loop {
+                    let flag = bit_str.next().unwrap();
+                    bits.extend(bit_str.take(4));
+                    nibbles += 1;
                     if flag == '0' {
                         break;
                     }
@@ -39,29 +38,26 @@ impl Packet {
                 let bits: String = bits.into_iter().collect();
                 let value = i128::from_str_radix(&bits, 2).unwrap();              
 
-                (
-                    Packet { 
-                        version: version,
-                        ptype: ptype,
-                        packets: Vec::new(),
-                        value: value,
-                    }, 
-                    i
-                )
+                Packet { 
+                    version: version,
+                    ptype: ptype,
+                    packets: Vec::new(),
+                    value: value,
+                    length: 6 + nibbles * 5,
+                }
             }
             _ => {
                 let mut packets = Vec::new();
 
-                if bytes[i] as char == '0' {
-                    i += 1;
-                    let expected_length = usize::from_str_radix(&bit_str[i..(i+15)], 2).unwrap();
-                    i += 15;
+                let length_type = bit_str.next().unwrap();
+                if length_type == '0' {
+                    let expected_length: String = bit_str.take(15).collect();
+                    let expected_length = usize::from_str_radix(&expected_length, 2).unwrap();
 
                     let mut actual_length = 0;
                     while actual_length < expected_length {
-                        let (packet, new_i) = Packet::parse(bit_str, i);
-                        actual_length += new_i - i;
-                        i = new_i;
+                        let packet = Packet::parse(bit_str);
+                        actual_length += packet.length;
                         packets.push(packet);
                     }
 
@@ -69,35 +65,32 @@ impl Packet {
                         panic!("Unexpected packet segment length, expected {} but was {}", expected_length, actual_length);
                     }
                     
-                    (
-                        Packet { 
-                            version: version,
-                            ptype: ptype,
-                            packets: packets,
-                            value: -1,
-                        }, 
-                        i
-                    )
+                    let length = 22 + packets.iter().map(|p| p.length).sum::<usize>(); 
+
+                    Packet { 
+                        version: version,
+                        ptype: ptype,
+                        packets: packets,
+                        value: -1,
+                        length: length,
+                    }
                 } else {
-                    i += 1;
-                    let packet_count = usize::from_str_radix(&bit_str[i..(i+11)], 2).unwrap();
-                    i += 11;
+                    let packet_count: String = bit_str.take(11).collect();
+                    let packet_count = usize::from_str_radix(&packet_count, 2).unwrap();
 
                     for _ in 0..packet_count {
-                        let (packet, new_i) = Packet::parse(bit_str, i);
-                        i = new_i;
-                        packets.push(packet);
+                        packets.push(Packet::parse(bit_str));
                     }
 
-                    (
-                        Packet { 
-                            version: version,
-                            ptype: ptype,
-                            packets: packets,
-                            value: -1,
-                        }, 
-                        i
-                    )
+                    let length = 18 + packets.iter().map(|p| p.length).sum::<usize>(); 
+
+                    Packet { 
+                        version: version,
+                        ptype: ptype,
+                        packets: packets,
+                        value: -1,
+                        length: length,
+                    }
                 }
             }
         }        
@@ -140,7 +133,7 @@ fn version_sum(packet: &Packet) -> i128 {
 
 fn version_sum_for_input(input: &str) -> i128 {
     let bit_str = hex_str_to_binary(&input);
-    let (packet, _) = Packet::parse(&bit_str, 0);
+    let packet = Packet::parse(&mut bit_str.chars());
     version_sum(&packet)
 }
 
@@ -150,7 +143,7 @@ fn star2(input: String) -> i128 {
 
 fn evaluate(input: &str) -> i128 {
     let bit_str = hex_str_to_binary(&input);
-    let (packet, _) = Packet::parse(&bit_str, 0);
+    let packet = Packet::parse(&mut bit_str.chars());
     packet.evaluate()
 }
 
@@ -171,21 +164,21 @@ mod tests {
 
     #[test]
     fn parse_value() {
-        let (packet, i) = Packet::parse("110100101111111000101000", 0);
-        assert_eq!(i, 21);
+        let packet = Packet::parse(&mut "110100101111111000101000".chars());
+        assert_eq!(packet.length, 21);
         assert_eq!(packet.version, 6);
         assert_eq!(packet.ptype, 4);
         assert_eq!(packet.value, 2021);
 
-        let (packet, i) = Packet::parse("11010001010", 0);
-        assert_eq!(i, 11);
+        let packet = Packet::parse(&mut "11010001010".chars());
+        assert_eq!(packet.length, 11);
         assert_eq!(packet.value, 10);
     }
 
     #[test]
     fn parse_nested_type_0() {
-        let (packet, i) = Packet::parse("00111000000000000110111101000101001010010001001000000000", 0);
-        assert_eq!(i, 49);
+        let packet = Packet::parse(&mut "00111000000000000110111101000101001010010001001000000000".chars());
+        assert_eq!(packet.length, 49);
         assert_eq!(packet.version, 1);
         assert_eq!(packet.ptype, 6);
         assert_eq!(packet.packets.len(), 2);
@@ -195,8 +188,8 @@ mod tests {
 
     #[test]
     fn parse_nested_type_1() {
-        let (packet, i) = Packet::parse("11101110000000001101010000001100100000100011000001100000", 0);
-        assert_eq!(i, 51);
+        let packet = Packet::parse(&mut "11101110000000001101010000001100100000100011000001100000".chars());
+        assert_eq!(packet.length, 51);
         assert_eq!(packet.version, 7);
         assert_eq!(packet.ptype, 3);
         assert_eq!(packet.packets.len(), 3);
