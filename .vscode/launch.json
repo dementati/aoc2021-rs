@@ -38,7 +38,7 @@
                     "kind": "bin"
                 }
             },
-            "args": [],
+            "args": ["parse_nested_type_0"],
             "cwd": "${workspaceFolder}"
         }
     ]

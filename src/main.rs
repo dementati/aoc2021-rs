@@ -16,6 +16,7 @@ mod day12;
 mod day13;
 mod day14;
 mod day15;
+mod day16;
 
 use std::env;
 use std::fs;
@@ -63,6 +64,7 @@ fn create_puzzle(day_number: u8, part_number: u8) -> Puzzle<String, i128> {
         13 => Puzzle::new(part_number, day13::solver(part_number)),
         14 => Puzzle::new(part_number, day14::solver(part_number)),
         15 => Puzzle::new(part_number, day15::solver(part_number)),
+        16 => Puzzle::new(part_number, day16::solver(part_number)),
         _ => panic!("Unknown day!"),
     }
 }
