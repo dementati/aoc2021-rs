@@ -24,73 +24,12 @@ impl Packet {
         let ptype = i128::from_str_radix(&ptype, 2).unwrap();
 
         match ptype {
-            4 => {
-                let mut bits: Vec<char> = Vec::new();
-                let mut nibbles = 0;
-                loop {
-                    let flag = bit_str.next().unwrap();
-                    bits.extend(bit_str.take(4));
-                    nibbles += 1;
-                    if flag == '0' {
-                        break;
-                    }
-                }
-                let bits: String = bits.into_iter().collect();
-                let value = i128::from_str_radix(&bits, 2).unwrap();              
-
-                Packet { 
-                    version: version,
-                    ptype: ptype,
-                    packets: Vec::new(),
-                    value: value,
-                    length: 6 + nibbles * 5,
-                }
-            }
+            4 => parse_literal(version, ptype, bit_str),
             _ => {
-                let mut packets = Vec::new();
-
-                let length_type = bit_str.next().unwrap();
-                if length_type == '0' {
-                    let expected_length: String = bit_str.take(15).collect();
-                    let expected_length = usize::from_str_radix(&expected_length, 2).unwrap();
-
-                    let mut actual_length = 0;
-                    while actual_length < expected_length {
-                        let packet = Packet::parse(bit_str);
-                        actual_length += packet.length;
-                        packets.push(packet);
-                    }
-
-                    if actual_length != expected_length {
-                        panic!("Unexpected packet segment length, expected {} but was {}", expected_length, actual_length);
-                    }
-                    
-                    let length = 22 + packets.iter().map(|p| p.length).sum::<usize>(); 
-
-                    Packet { 
-                        version: version,
-                        ptype: ptype,
-                        packets: packets,
-                        value: -1,
-                        length: length,
-                    }
-                } else {
-                    let packet_count: String = bit_str.take(11).collect();
-                    let packet_count = usize::from_str_radix(&packet_count, 2).unwrap();
-
-                    for _ in 0..packet_count {
-                        packets.push(Packet::parse(bit_str));
-                    }
-
-                    let length = 18 + packets.iter().map(|p| p.length).sum::<usize>(); 
-
-                    Packet { 
-                        version: version,
-                        ptype: ptype,
-                        packets: packets,
-                        value: -1,
-                        length: length,
-                    }
+                match bit_str.next().unwrap() {
+                    '0' => parse_bitcount(version, ptype, bit_str),
+                    '1' => parse_packet_count(version, ptype, bit_str),
+                    _ => panic!("Unknown length type"),
                 }
             }
         }        
@@ -108,6 +47,76 @@ impl Packet {
             7 => if self.packets[0].evaluate() == self.packets[1].evaluate() { 1 } else { 0 },
             _ => panic!("Unknown packet type {}", self.ptype),
         }
+    }
+}
+
+fn parse_literal(version: i128, ptype: i128, bit_str: &mut std::str::Chars) -> Packet {
+    let mut bits: Vec<char> = Vec::new();
+    let mut nibbles = 0;
+    loop {
+        let flag = bit_str.next().unwrap();
+        bits.extend(bit_str.take(4));
+        nibbles += 1;
+        if flag == '0' {
+            break;
+        }
+    }
+    let bits: String = bits.into_iter().collect();
+    let value = i128::from_str_radix(&bits, 2).unwrap();              
+
+    Packet { 
+        version: version,
+        ptype: ptype,
+        packets: Vec::new(),
+        value: value,
+        length: 6 + nibbles * 5,
+    }
+}
+
+fn parse_bitcount(version: i128, ptype: i128, bit_str: &mut std::str::Chars) -> Packet {
+    let expected_length: String = bit_str.take(15).collect();
+    let expected_length = usize::from_str_radix(&expected_length, 2).unwrap();
+
+    let mut actual_length = 0;
+    let mut packets = Vec::new();
+    while actual_length < expected_length {
+        let packet = Packet::parse(bit_str);
+        actual_length += packet.length;
+        packets.push(packet);
+    }
+
+    if actual_length != expected_length {
+        panic!("Unexpected packet segment length, expected {} but was {}", expected_length, actual_length);
+    }
+    
+    let length = 22 + packets.iter().map(|p| p.length).sum::<usize>(); 
+
+    Packet { 
+        version: version,
+        ptype: ptype,
+        packets: packets,
+        value: -1,
+        length: length,
+    }
+}
+
+fn parse_packet_count(version: i128, ptype: i128, bit_str: &mut std::str::Chars) -> Packet {
+    let packet_count: String = bit_str.take(11).collect();
+    let packet_count = usize::from_str_radix(&packet_count, 2).unwrap();
+
+    let mut packets = Vec::new();
+    for _ in 0..packet_count {
+        packets.push(Packet::parse(bit_str));
+    }
+
+    let length = 18 + packets.iter().map(|p| p.length).sum::<usize>(); 
+
+    Packet { 
+        version: version,
+        ptype: ptype,
+        packets: packets,
+        value: -1,
+        length: length,
     }
 }
 
