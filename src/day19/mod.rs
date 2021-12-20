@@ -1,7 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
 use itertools::Itertools;
-use math::round;
 use nalgebra::{Vector3, Rotation3};
 
 type Pos = Vector3<i128>;
@@ -33,21 +32,17 @@ fn rotations() -> Vec<Rotation> {
     result
 }
 
-fn zero_rotation() -> Rotation {
-    Rotation3::new(Vector3::new(0.0, 0.0, 0.0))
-}
-
 fn rotate(pos: Pos, rotation: Rotation) -> Pos {
     let point = pos.cast::<f64>();
     let rotated = rotation * point;
     Pos::new(
-        round::half_up(rotated.x, 0) as i128,
-        round::half_up(rotated.y, 0) as i128,
-        round::half_up(rotated.z, 0) as i128,
+        rotated.x.round() as i128,
+        rotated.y.round() as i128,
+        rotated.z.round() as i128,
     )
 }
 
-#[derive(Eq, PartialEq, Hash)]
+#[derive(Eq, PartialEq, Hash, Clone)]
 struct Scanner {
     beacons: Vec<Pos>,
 }
@@ -65,7 +60,6 @@ impl Scanner {
         self.beacons[index]
     }
 
-    /// Subtract the first 
     fn normalize(&self, index: usize) -> HashSet<Pos> {
         let first = self.beacons[index];
         self.beacons.iter()
@@ -85,38 +79,22 @@ impl Scanner {
     /// with another scanner, and if so, returns the relative
     /// position of other relative to this scanner
     fn locate(&self, other: &Scanner) -> Option<(Pos, Rotation)> {
-        // Normalize on 0 for A
-        let norm_a = self.normalize(0);
+        for i in 0..self.len() {
+            let norm_a = self.normalize(i);
+            for j in 0..other.len() {
+                for rotation in rotations() {
+                    let rotated_b = other.rotate(rotation);
+                    let norm_b = rotated_b.normalize(j);
 
-        // For each rotation of scanner B
-        for rotation in rotations() {
-            let rotated_b = other.rotate(rotation);
-            // For each beacon x in B
-            for i in 0..other.len() - 1 {
-                // Normalize on x for B
-                let norm_b = rotated_b.normalize(i);
-
-                // Check if intersection is >= 12
-                let intersect = norm_a.intersection(&norm_b);
-                if norm_a.intersection(&norm_b).count() >= 12 {
-                    // Subtract A[0] from rotated B[x] 
-                    // to position of B relative to A
-                    let pos = self.get(0) - rotated_b.get(i);
-                    return Some((pos, rotation));
+                    if norm_a.intersection(&norm_b).count() >= 12 {
+                        let pos = self.get(i) - rotated_b.get(j);
+                        return Some((pos, rotation));
+                    }
                 }
             }
         }
 
         None
-    }
-
-    /// Get global positions of the beacons of this scanner. 
-    /// global_pos is the global location of this scanner.
-    /// global_rot is the global rotation of this scanner.
-    fn global_beacons(&self, global_pos: Pos, global_rot: Rotation) -> HashSet<Pos> {
-        self.beacons.iter()
-            .map(|&pos| rotate(pos, global_rot) + global_pos)
-            .collect()
     }
 }
 
@@ -134,13 +112,13 @@ fn star1(input: String) -> i128 {
 
 fn solve1(input: &str) -> i128 {
     let scanners = parse_input(input);
-    let locations = locate_scanners(&scanners[0], &scanners);
+    let locations = locate_scanners(scanners[0].clone(), scanners);
 
-    let beacons: HashSet<Pos> = scanners.iter()
-        .flat_map(|s| {
-            let (pos, rot) = locations[s];
-            s.global_beacons(pos, rot)
-        })
+    let beacons: HashSet<Pos> = locations.iter()
+        .flat_map(|(s, pos)| 
+            s.beacons.iter()
+                .map(move |b| pos + b)
+        )
         .collect();
 
     beacons.len() as i128
@@ -170,27 +148,27 @@ fn parse_input(input: &str) -> Vec<Scanner> {
         .collect()
 }
 
-/// Find locations and rotations of scanners relative to origin
-/// Indices of scanners match indices of result.
-fn locate_scanners<'a>(origin: &'a Scanner, scanners: &'a Vec<Scanner>) -> HashMap<&'a Scanner, (Pos, Rotation)> {
-    let mut open = hashset!{origin};
-    let mut closed: HashSet<_> = scanners.iter().filter(|&s| s != origin).collect();
+/// Find locations and rotations of scanners relative to origin.
+/// Result map scanner keys are rotated to align with origin.
+fn locate_scanners<'a>(origin: Scanner, scanners: Vec<Scanner>) -> HashMap<Scanner, Pos> {
+    let mut open = hashset!{origin.clone()};
+    let mut closed: HashSet<_> = scanners.into_iter().filter(|s| s != &origin).collect();
 
-    let mut result: HashMap<&Scanner, (Pos, Rotation)> = hashmap!{origin => (Pos::new(0, 0, 0), zero_rotation())};
+    let mut result: HashMap<Scanner, Pos> = hashmap!{origin => Pos::new(0, 0, 0)};
     while !open.is_empty() {
-        // Get a scanner s from S
         let s = open.iter().next().unwrap().clone();
         open.remove(&s);
 
         let mut new_closed = hashset!{};
-        for &s2 in closed.iter() {
-            if let Some((pos, rotation)) = s.locate(s2) {
-                let (s_pos, _) = result[s];
+        for s2 in closed.iter() {
+            if let Some((pos, rotation)) = s.locate(&s2) {
+                let rotated_s2 = s2.rotate(rotation);
+                let s_pos = result[&s];
                 let s2_pos = s_pos + pos;
-                result.insert(s2, (s2_pos, rotation));
-                open.insert(s2);
+                result.insert(rotated_s2.clone(), s2_pos);
+                open.insert(rotated_s2);
             } else {
-                new_closed.insert(s2);
+                new_closed.insert(s2.clone());
             }
         }
         closed = new_closed;
@@ -200,7 +178,15 @@ fn locate_scanners<'a>(origin: &'a Scanner, scanners: &'a Vec<Scanner>) -> HashM
 }
 
 fn star2(input: String) -> i128 {
-    0
+    let scanners = parse_input(&input);
+    let locations: Vec<_> = locate_scanners(scanners[0].clone(), scanners)
+        .values()
+        .map(|pos| (pos.x, pos.y, pos.z))
+        .collect();
+    locations.iter().cartesian_product(locations.iter())
+        .map(|((ax, ay, az), (bx, by, bz))| (ax - bx).abs() + (ay - by).abs() + (az - bz).abs())
+        .max()
+        .unwrap()
 }
 
 #[cfg(test)]
@@ -208,6 +194,65 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_rotation() {
+    fn test_locate() {
+        let input = "--- scanner 0 ---
+404,-588,-901
+528,-643,409
+-838,591,734
+390,-675,-793
+-537,-823,-458
+-485,-357,347
+-345,-311,381
+-661,-816,-575
+-876,649,763
+-618,-824,-621
+553,345,-567
+474,580,667
+-447,-329,318
+-584,868,-557
+544,-627,-890
+564,392,-477
+455,729,728
+-892,524,684
+-689,845,-530
+423,-701,434
+7,-33,-71
+630,319,-379
+443,580,662
+-789,900,-551
+459,-707,401
+
+--- scanner 1 ---
+686,422,578
+605,423,415
+515,917,-361
+-336,658,858
+95,138,22
+-476,619,847
+-340,-569,-846
+567,-361,727
+-460,603,-452
+669,-402,600
+729,430,532
+-500,-761,534
+-322,571,750
+-466,-666,-811
+-429,-592,574
+-355,545,-477
+703,-491,-529
+-328,-685,520
+413,935,-424
+-391,539,-444
+586,-435,557
+-364,-763,-893
+807,-499,-711
+755,-354,-619
+553,889,-390";
+
+        let scanners = parse_input(input);
+        let maybe = scanners[0].locate(&scanners[1]);
+        assert_eq!(maybe.is_some(), true);
+        let (pos, _) = maybe.unwrap();
+        assert_eq!(pos, Pos::new(68, -1246, -43));
     }
 }
