@@ -39,7 +39,6 @@ fn reduce(input: &str) -> String {
 }
 
 fn explode(input: &str) -> Option<String> {
-    let mut count = 0;
     let maybe_bounds = find_explodable_pair(input);
     if maybe_bounds.is_none() {
         return None;
@@ -169,7 +168,7 @@ fn find_splittable_number(input: &str) -> Option<(usize, usize)> {
 fn magnitude(input: &str) -> i128 {
     let chars: Vec<_> = input.chars().collect();
     
-    let mut index = 0;
+    let index;
     let a = if chars[1].is_digit(10) {
         index = 3;
         chars[1].to_digit(10).unwrap() as i128
