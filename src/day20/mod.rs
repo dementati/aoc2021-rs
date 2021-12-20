@@ -1,9 +1,9 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 
 use itertools::Itertools;
 
 type Pos = (i128, i128);
-type Image = HashMap<Pos, char>;
+type Image = HashSet<Pos>;
 type Algo = Vec<char>;
 
 pub fn solver(star: u8) -> fn(String) -> i128 {
@@ -15,16 +15,11 @@ pub fn solver(star: u8) -> fn(String) -> i128 {
 }
 
 fn star1(input: String) -> i128 {
-    let (algo, image) = parse_input(&input);
+    let (algo, mut image) = parse_input(&input);
 
-    println!("{:?}", algo);
-    draw(&image);
-    println!();
-    let image = evolve(&image, &algo);
-    draw(&image);
-    println!();
-    let image = evolve(&image, &algo);
-    draw(&image);
+    for i in 0..2 {
+        image = evolve(&image, &algo, if i % 2 == 0 { '.' } else { '#' });
+    }
 
     image.len() as i128
 }
@@ -49,17 +44,13 @@ fn parse_input(input: &str) -> (Algo, Image) {
 }
 
 fn index(image: &Image, pos: Pos, default: char) -> usize {
+    let (default, non_default) = if default == '#' {('1', '0')} else {('0', '1')};
     let (px, py) = pos;
     let mut bits = vec![];
     for y in (py - 1)..=(py + 1) {
         for x in (px - 1)..=(px + 1) {
-            if image.contains_key(&(x, y)) {
-                let bit = match image[&(x, y)] {
-                    '#' => '1',
-                    '.' => '0',
-                    _ => panic!(),
-                };
-                bits.push(bit);
+            if image.contains(&(x, y)) {
+                bits.push(non_default);
             } else {
                 bits.push(default);
             }
@@ -69,20 +60,22 @@ fn index(image: &Image, pos: Pos, default: char) -> usize {
     usize::from_str_radix(&bits, 2).unwrap()
 }
 
-fn evolve(image: &Image, algo: &Algo) -> Image {
-    let X: HashSet<_> = image.keys().map(|(x, _)| *x).collect();
-    let Y: HashSet<_> = image.keys().map(|(_, y)| *y).collect();
+fn evolve(image: &Image, algo: &Algo, default: char) -> Image {
+    let all_x: HashSet<_> = image.iter().map(|(x, _)| *x).collect();
+    let all_y: HashSet<_> = image.iter().map(|(_, y)| *y).collect();
 
-    let min_x = X.iter().min().unwrap();
-    let max_x = X.iter().max().unwrap();
-    let min_y = Y.iter().min().unwrap();
-    let max_y = Y.iter().max().unwrap();
+    let min_x = all_x.iter().min().unwrap();
+    let max_x = all_x.iter().max().unwrap();
+    let min_y = all_y.iter().min().unwrap();
+    let max_y = all_y.iter().max().unwrap();
 
     let mut new_image = Image::new();
     for y in (min_y - 1)..=(max_y + 1) {
         for x in (min_x - 1)..=(max_x + 1) {
-            let index = index(image, (x, y));
-            if algo[index] == '#' {
+            let index = index(image, (x, y), default);
+            let c = algo[index];
+
+            if c == default {
                 new_image.insert((x, y));
             }
         }
@@ -91,23 +84,12 @@ fn evolve(image: &Image, algo: &Algo) -> Image {
     new_image
 }
 
-fn draw(image: &Image) {
-    let X: HashSet<_> = image.iter().map(|(x, _)| *x).collect();
-    let Y: HashSet<_> = image.iter().map(|(_, y)| *y).collect();
-
-    let min_x = X.iter().min().unwrap();
-    let max_x = X.iter().max().unwrap();
-    let min_y = Y.iter().min().unwrap();
-    let max_y = Y.iter().max().unwrap();
-
-    for y in (min_y - 3)..=(max_y + 3) {
-        for x in (min_x - 3)..=(max_x + 3) {
-            print!("{}", if image.contains(&(x, y)) { '#' } else { '.'});
-        }
-        println!();
-    } 
-}
-
 fn star2(input: String) -> i128 {
-    0
+    let (algo, mut image) = parse_input(&input);
+
+    for i in 0..50 {
+        image = evolve(&image, &algo, if i % 2 == 0 { '.' } else { '#' });
+    }
+
+    image.len() as i128
 }
