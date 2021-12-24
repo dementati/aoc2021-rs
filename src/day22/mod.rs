@@ -1,4 +1,3 @@
-use std::cmp;
 use std::collections::HashSet;
 use std::collections::HashMap;
 
@@ -257,26 +256,4 @@ fn from_intervals(xin: &Interval, yin: &Interval, zin: &Interval) -> Cuboid {
             zin.end - 1,
         )
     )
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn test_checkpoints() {
-        let input = "on x=10..12,y=10..12,z=10..12
-        on x=11..14,y=11..13,z=11..13
-        off x=9..11,y=9..11,z=9..11
-        on x=10..10,y=10..10,z=10..10";
-
-        let instructions = parse_input(input);
-        let cuboids = instructions.iter().map(|(_, cuboid)| *cuboid).collect();
-        let (xcp, ycp, zcp) = checkpoints(&cuboids);
-        println!("{:?}", xcp);
-
-        let xins = intervals(&xcp);
-
-        println!("{:?}", xins);
-    }
 }
