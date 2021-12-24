@@ -19,7 +19,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["21", "2", "test.txt"],
+            "args": ["22", "2", "test3.txt"],
             "cwd": "${workspaceFolder}"
         },
         {
@@ -38,7 +38,7 @@
                     "kind": "bin"
                 }
             },
-            "args": ["--", "--nocapture", "test_locate"],
+            "args": ["--", "--nocapture", "test_checkpoints"],
             "cwd": "${workspaceFolder}"
         }
     ]
