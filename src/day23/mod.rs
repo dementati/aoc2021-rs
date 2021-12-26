@@ -79,20 +79,15 @@ fn shortest_path(
     let mut open = BinaryHeap::new();
     open.push(State { cost: 0, position: start.clone(), previous_mover: (-1, -1) });
     let mut g = hashmap!{ start => 0 };
-    let mut closed = hashset!{};
 
     while let Some(State { cost, position, previous_mover }) = open.pop() {
         // println!("current, with cost {}: ", cost);
         // display(&position);
         if position == goal { return Some(cost); }
 
-        // if cost > g[&position] { continue; }
+        if cost > g[&position] { continue; }
 
         for (n, n_cost, mover) in neighbours_fn(&position, previous_mover, room_size) {
-            if closed.contains(&n) {
-                continue;
-            }
-
             // println!("neighbour with cost {}: ", n_cost);
             // display(&n);
             let tentative_g = cost + n_cost;
@@ -106,8 +101,6 @@ fn shortest_path(
                 //println!("Total cost {} is worse than best path, ignoring", tentative_g);
             }
         }
-
-        closed.insert(position);
     }
 
     None
