@@ -9,14 +9,6 @@ pub fn solver(star: u8) -> fn(String) -> i128 {
 }
 
 type Pos = (i16, i16);
-/*
-#[derive(Clone, Eq, PartialEq, Hash)]
-struct Board {
-    positions: BTreeMap<Pos, char>,
-    moving: Option<Pos>,
-}
-*/
-
 type Board = BTreeMap<Pos, char>;
 
 fn star1(input: String) -> i128 {
@@ -35,9 +27,10 @@ fn parse_input(input: &str) -> Board {
 }
 
 fn goal(size: usize) -> Board {
-    let mut input: String = "#############
-#...........#
-###A#B#C#D###\n".to_string();
+    let mut input: String = 
+        "#############\n\
+        #...........#\n\
+        ###A#B#C#D###\n".to_string();
 
     for _ in 0..(size - 1) {
         input.push_str("  #A#B#C#D#\n");
@@ -233,11 +226,11 @@ mod tests {
 
     #[test]
     fn test_simple() {
-        let input = "#############
-#..A........#
-###.#B#C#D###
-  #A#B#C#D#
-  #########";
+        let input = 
+            "#############\n\
+            #..A........#\n\
+            ###.#B#C#D###\n\
+            ###A#B#C#D#";
 
         assert_map(input, 1, 2);
     }
@@ -245,11 +238,10 @@ mod tests {
     #[test]
     fn test_simple2() {
         let input = 
-"#############
-#....B......#
-###A#.#C#D###
-  #A#B#C#D#
-  #########";
+            "#############\n\
+            #....B......#\n\
+            ###A#.#C#D###\n\
+            ###A#B#C#D#";
 
         assert_map(input, 10, 2);
     }
@@ -257,18 +249,16 @@ mod tests {
     #[test]
     fn wont_move_into_wrong_room() {
         let start = 
-"#############
-#CC....B....#
-###A#.#.#D###
-  #A#B#.#D#
-  #########";
+            "#############\n\
+            #CC....B....#\n\
+            ###A#.#.#D###\n\
+            ###A#B#.#D#";
 
         let neighbour = 
-"#############
-#CC.........#
-###A#.#B#D###
-  #A#B#.#D#
-  #########";
+            "#############\n\
+            #CC.........#\n\
+            ###A#.#B#D###\n\
+            ###A#B#.#D#";
 
         assert_eq!(is_neighbour(start, neighbour, (7, 1), 2), false);
     }
@@ -276,18 +266,16 @@ mod tests {
     #[test]
     fn will_move_with_clear_path() {
         let start = 
-"#############
-#...B......C#
-###A#.#.#D###
-  #A#B#C#D#
-  #########";
+            "#############\n\
+            #...B......C#\n\
+            ###A#.#.#D###\n\
+            ###A#B#C#D#";
 
         let neighbour = 
-"#############
-#...B.....C.#
-###A#.#.#D###
-  #A#B#C#D#
-  #########";
+            "#############\n\
+            #...B.....C.#\n\
+            ###A#.#.#D###\n\
+            ###A#B#C#D#";
 
         assert_eq!(is_neighbour(start, neighbour, (12, 1), 2), true);
     }
@@ -295,118 +283,106 @@ mod tests {
     #[test]
     fn test_example_path() {
         let start = 
-"#############
-#...........#
-###B#C#B#D###
-  #A#D#C#A#
-  #########";
+            "#############\n\
+            #...........#\n\
+            ###B#C#B#D###\n\
+            ###A#D#C#A#";
 
         let neighbour = 
-"#############
-#......B....#
-###B#C#.#D###
-  #A#D#C#A#
-  #########";
+            "#############\n\
+            #......B....#\n\
+            ###B#C#.#D###\n\
+            ###A#D#C#A#";
         assert_eq!(is_neighbour(start, neighbour, (-1, -1), 2), true);
 
         let start = neighbour;
         let neighbour = 
-"#############
-#.....B.....#
-###B#C#.#D###
-  #A#D#C#A#
-  #########";
+            "#############\n\
+            #.....B.....#\n\
+            ###B#C#.#D###\n\
+            ###A#D#C#A#";
         assert_eq!(is_neighbour(start, neighbour, (7, 1), 2), true);
 
         let start = neighbour;
         let neighbour = 
-"#############
-#....B......#
-###B#C#.#D###
-  #A#D#C#A#
-  #########";
+            "#############\n\
+            #....B......#\n\
+            ###B#C#.#D###\n\
+            ###A#D#C#A#";
         assert_eq!(is_neighbour(start, neighbour, (6, 1), 2), true);
 
         let start = neighbour;
         let neighbour = 
-"#############
-#...B.......#
-###B#C#.#D###
-  #A#D#C#A#
-  #########";
+            "#############\n\
+            #...B.......#\n\
+            ###B#C#.#D###\n\
+            ###A#D#C#A#";
         assert_eq!(is_neighbour(start, neighbour, (5, 1), 2), true);
 
         let start = neighbour;
         let neighbour = 
-"#############
-#...BC......#
-###B#.#.#D###
-  #A#D#C#A#
-  #########";
+            "#############\n\
+            #...BC......#\n\
+            ###B#.#.#D###\n\
+            ###A#D#C#A#";
         assert_eq!(is_neighbour(start, neighbour, (4, 1), 2), true);
 
         let start = neighbour;
         let neighbour = 
-"#############
-#...B.C.....#
-###B#.#.#D###
-  #A#D#C#A#
-  #########";
+            "#############\n\
+            #...B.C.....#\n\
+            ###B#.#.#D###\n\
+            ###A#D#C#A#";
         assert_eq!(is_neighbour(start, neighbour, (5, 1), 2), true);
 
         let start = neighbour;
         let neighbour = 
-"#############
-#...B..C....#
-###B#.#.#D###
-  #A#D#C#A#
-  #########";
+            "#############\n\
+            #...B..C....#\n\
+            ###B#.#.#D###\n\
+            ###A#D#C#A#";
         assert_eq!(is_neighbour(start, neighbour, (6, 1), 2), true);
 
         let start = neighbour;
         let neighbour = 
-"#############
-#...B.......#
-###B#.#C#D###
-  #A#D#C#A#
-  #########";
+            "#############\n\
+            #...B.......#\n\
+            ###B#.#C#D###\n\
+            ###A#D#C#A#";
         assert_eq!(is_neighbour(start, neighbour, (7, 1), 2), true);
 
         let start = neighbour;
         let neighbour = 
-"#############
-#...B.......#
-###B#D#C#D###
-  #A#.#C#A#
-  #########";
+            "#############\n\
+            #...B.......#\n\
+            ###B#D#C#D###\n\
+            ###A#.#C#A#";
         assert_eq!(is_neighbour(start, neighbour, (7, 2), 2), true);
     }
 
     #[test]
-    fn test_unknown_issue() {
+    fn test_move_up_inside_room() {
         let start = 
-"#############
-#...B.......#
-###B#.#C#D###
-  #A#D#C#A#
-  #########";
+            "#############\n\
+            #...B.......#\n\
+            ###B#.#C#D###\n\
+            ###A#D#C#A#";
         let neighbour = 
-"#############
-#...B.......#
-###B#D#C#D###
-  #A#.#C#A#
-  #########";
+            "#############\n\
+            #...B.......#\n\
+            ###B#D#C#D###\n\
+            ###A#.#C#A#";
         assert_eq!(is_neighbour(start, neighbour, (7, 2), 2), true);
     }
 
     #[test]
     fn test_size_3() {
-        let input = "#############
-#..A........#
-###.#B#C#D###
-  #A#B#C#D#
-  #A#B#C#D#
-  #########";
+        let input = 
+            "#############\n\
+            #..A........#\n\
+            ###.#B#C#D###\n\
+            ###A#B#C#D#\n\
+            ###A#B#C#D#";
 
         assert_map(input, 1, 3);
     }
