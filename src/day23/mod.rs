@@ -1,4 +1,4 @@
-use std::collections::{HashSet, BTreeMap, HashMap};
+use std::collections::{BTreeMap, HashMap};
 
 pub fn solver(star: u8) -> fn(String) -> i128 {
     match star {
@@ -11,12 +11,23 @@ pub fn solver(star: u8) -> fn(String) -> i128 {
 type Pos = (i16, i16);
 type Board = BTreeMap<Pos, char>;
 
+const SPACES_OUTSIDE_ROOMS: [Pos; 4] = [(3, 1), (5, 1), (7, 1), (9, 1)];
+const HALLWAY: [Pos; 7] = [
+    (1, 1),
+    (2, 1),
+    (4, 1),
+    (6, 1),
+    (8, 1),
+    (10, 1),
+    (11, 1),
+];
+
 fn star1(input: String) -> i128 {
     let board = parse_input(&input);
     shortest_path(neighbours, zero_heuristic, board, goal(2), 2).unwrap()
 }
 
-fn zero_heuristic(board: &Board, room_size: usize) -> i128 {
+fn zero_heuristic(_board: &Board, _room_size: usize) -> i128 {
     0
 }
 
@@ -67,11 +78,11 @@ impl PartialOrd for State {
 }
 
 fn shortest_path(
-    neighbours_fn: fn (&Board, Pos, i16) -> Vec<(Board, i128, Pos)>, 
+    neighbours_fn: fn (&Board, Pos, &HashMap<char, Vec<Pos>>) -> Vec<(Board, i128, Pos)>, 
     h: fn (&Board, usize) -> i128,
     start: Board, 
     goal: Board,
-    room_size: i16,
+    room_size: usize,
 ) -> Option<i128> {
     println!("Start: ");
     display(&start);
@@ -86,9 +97,10 @@ fn shortest_path(
         previous_mover: (-1, -1) }
     );
     let mut dist = hashmap!{ start => 0 };
+    let rooms = create_rooms(room_size);
 
     let mut count = 0;
-    while let Some(State { g, f, position, previous_mover }) = open.pop() {
+    while let Some(State { g, f: _, position, previous_mover }) = open.pop() {
         count += 1;
 
         if position == goal { 
@@ -98,7 +110,7 @@ fn shortest_path(
 
         if g > dist[&position] { continue; }
 
-        for (n, n_cost, mover) in neighbours_fn(&position, previous_mover, room_size) {
+        for (n, n_cost, mover) in neighbours_fn(&position, previous_mover, &rooms) {
             // println!("neighbour with cost {}: ", n_cost);
             // display(&n);
             let tentative_g = g + n_cost;
@@ -118,37 +130,14 @@ fn shortest_path(
     None
 }
 
-fn neighbours(board: &Board, previous_mover: Pos, room_size: i16) -> Vec<(Board, i128, Pos)> {
+fn neighbours(board: &Board, previous_mover: Pos, rooms: &HashMap<char, Vec<Pos>>) -> Vec<(Board, i128, Pos)> {
     let mut result = Vec::new();
-
-    let spaces_outside_rooms = [(3, 1), (5, 1), (7, 1), (9, 1)];
-    let rooms: HashMap<char, Vec<_>> = hashmap!{
-        'A' => (2..(2 + room_size)).map(|y| (3, y)).collect(),
-        'B' => (2..(2 + room_size)).map(|y| (5, y)).collect(),
-        'C' => (2..(2 + room_size)).map(|y| (7, y)).collect(),
-        'D' => (2..(2 + room_size)).map(|y| (9, y)).collect(),
-    };
-    let costs = hashmap!{
-        'A' => 1,
-        'B' => 10,
-        'C' => 100,
-        'D' => 1000,
-    };
-    let hallway = [
-        (1, 1),
-        (2, 1),
-        (4, 1),
-        (6, 1),
-        (8, 1),
-        (10, 1),
-        (11, 1),
-    ];
 
     // CHeck if any amphipod occupies a space outside a room. 
     // If so, move only that one.
     let amphipod_outside_room = board.iter()
         .filter(|(_, c)| **c != '.')
-        .filter(|(pos, _)| spaces_outside_rooms.contains(pos))
+        .filter(|(pos, _)| SPACES_OUTSIDE_ROOMS.contains(pos))
         .next();
 
     for (pos, c) in board.iter() {
@@ -175,7 +164,7 @@ fn neighbours(board: &Board, previous_mover: Pos, room_size: i16) -> Vec<(Board,
             // If current position is a hallway position,
             // ensure that amphipod has a clear path to a legal
             // room position, unless it's the previous mover
-            if *pos != previous_mover && hallway.contains(&pos) && !has_clear_path(&board, *pos, rooms[c][0]) {
+            if *pos != previous_mover && HALLWAY.contains(&pos) && !has_clear_path(&board, *pos, rooms[c][0]) {
                 continue;
             }
 
@@ -184,40 +173,45 @@ fn neighbours(board: &Board, previous_mover: Pos, room_size: i16) -> Vec<(Board,
             let mut new_board = board.clone();
             new_board.insert(*pos, '.');
             new_board.insert(next, *c);
-            result.push((new_board, costs[c], next));
+            result.push((new_board, cost(c), next));
         }
     }
 
     result
 }
 
+fn cost(c: &char) -> i128 {
+    match c {
+        'A' => 1,
+        'B' => 10,
+        'C' => 100,
+        'D' => 1000,
+        _ => panic!("Unknown amphipod"),
+    }
+}
+
+fn create_rooms(room_size: usize) -> HashMap<char, Vec<Pos>> {
+    hashmap!{
+        'A' => (2..(2 + room_size)).map(|y| (3 as i16, y as i16)).collect(),
+        'B' => (2..(2 + room_size)).map(|y| (5 as i16, y as i16)).collect(),
+        'C' => (2..(2 + room_size)).map(|y| (7 as i16, y as i16)).collect(),
+        'D' => (2..(2 + room_size)).map(|y| (9 as i16, y as i16)).collect(),
+    }
+}
+
+/// Assumption: Start position is in a hallway and end position
+/// is in a room, so if a path exists we can reach it by first 
+/// walking horizontally, turning only once and walking vertically.
 fn has_clear_path(board: &Board, start: Pos, end: Pos) -> bool {
-    let mut open = hashset!{start};
-    let mut closed = HashSet::new();
+    let (sx, sy) = start;
+    let (ex, ey) = end;
 
-    while !open.is_empty() {
-        let (x, y) = *open.iter().next().unwrap();
-        open.remove(&(x, y));
-        let neighbours: Vec<_> = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)].into_iter()
-            .filter(|pos| board.contains_key(&pos) && board[&pos] == '.')
-            .collect();
-
-        for n in neighbours.into_iter() {
-            if n == end {
-                return true;
-            }
-
-            if closed.contains(&n) {
-                continue;
-            }
-
-            open.insert(n);
-        }
-
-        closed.insert((x, y));
+    if ((sx + 1)..=ex).any(|x| board[&(x, sy)] != '.') {
+        return false;
     }
 
-    false
+    return ((sy + 1)..=ey).all(|y| board[&(ex, y)] == '.')
+    
 }
 
 fn display(board: &Board) {
@@ -290,7 +284,6 @@ fn heuristic(board: &Board, room_size: usize) -> i128 {
     // Return result sum
     result
 }
-
 
 fn star2(input: String) -> i128 {
     let board = parse_input(&input);
@@ -464,18 +457,19 @@ mod tests {
         assert_map(input, 1, 3);
     }
 
-    fn assert_map(input: &str, expected_score: i128, room_size: i16) {
+    fn assert_map(input: &str, expected_score: i128, room_size: usize) {
         let board = parse_input(input);
         let result = shortest_path(neighbours, zero_heuristic, board, goal(room_size as usize), room_size);
         assert_eq!(result.is_some(), true);
         assert_eq!(result.unwrap(), expected_score);
     }
 
-    fn is_neighbour(board: &str, neighbour: &str, mover: Pos, room_size: i16) -> bool {
+    fn is_neighbour(board: &str, neighbour: &str, mover: Pos, room_size: usize) -> bool {
         let board = parse_input(board);
         let neighbour = parse_input(neighbour);
+        let rooms = create_rooms(room_size);
 
-        neighbours(&board, mover, room_size)
+        neighbours(&board, mover, &rooms)
             .iter()
             .any(|(n, _, _)| n == &neighbour)
     }
