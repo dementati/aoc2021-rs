@@ -24,7 +24,7 @@ const HALLWAY: [Pos; 7] = [
 
 fn star1(input: String) -> i128 {
     let board = parse_input(&input);
-    shortest_path(neighbours2, zero_heuristic, board, goal(2), 2).unwrap()
+    shortest_path(neighbours, heuristic, board, goal(2), 2).unwrap()
 }
 
 fn zero_heuristic(_board: &Board, _room_size: usize) -> i128 {
@@ -128,7 +128,7 @@ fn shortest_path(
     None
 }
 
-fn neighbours2(board: &Board, rooms: &HashMap<char, Vec<Pos>>) -> Vec<(Board, i128)> {
+fn neighbours(board: &Board, rooms: &HashMap<char, Vec<Pos>>) -> Vec<(Board, i128)> {
     let mut result = Vec::new();
 
     let amphipods: Vec<_> = board.iter()
@@ -317,7 +317,7 @@ fn heuristic(board: &Board, room_size: usize) -> i128 {
 
 fn star2(input: String) -> i128 {
     let board = parse_input(&input);
-    shortest_path(neighbours2, heuristic, board, goal(4), 4).unwrap()
+    shortest_path(neighbours, zero_heuristic, board, goal(4), 4).unwrap()
 }
 
 #[cfg(test)]
