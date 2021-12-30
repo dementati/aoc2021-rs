@@ -24,7 +24,7 @@ const HALLWAY: [Pos; 7] = [
 
 fn star1(input: String) -> i128 {
     let board = parse_input(&input);
-    shortest_path(neighbours, zero_heuristic, board, goal(2), 2).unwrap()
+    shortest_path(neighbours2, zero_heuristic, board, goal(2), 2).unwrap()
 }
 
 fn zero_heuristic(_board: &Board, _room_size: usize) -> i128 {
@@ -111,8 +111,8 @@ fn shortest_path(
         if g > dist[&position] { continue; }
 
         for (n, n_cost, mover) in neighbours_fn(&position, previous_mover, &rooms) {
-            // println!("neighbour with cost {}: ", n_cost);
-            // display(&n);
+            //println!("neighbour with cost {}: ", n_cost);
+            //display(&n);
             let tentative_g = g + n_cost;
 
             if !dist.contains_key(&n) || tentative_g < *dist.get(&n).unwrap() {
@@ -174,6 +174,103 @@ fn neighbours(board: &Board, previous_mover: Pos, rooms: &HashMap<char, Vec<Pos>
             new_board.insert(*pos, '.');
             new_board.insert(next, *c);
             result.push((new_board, cost(c), next));
+        }
+    }
+
+    result
+}
+
+fn neighbours2(board: &Board, previous_mover: Pos, rooms: &HashMap<char, Vec<Pos>>) -> Vec<(Board, i128, Pos)> {
+    let mut result = Vec::new();
+
+    let amphipods: Vec<_> = board.iter()
+        .filter(|(_, c)| **c != '.')
+        .collect();
+
+    // For each amphipod
+    for (pos, c) in amphipods {
+        let (x, y) = pos;
+
+        // If amphipod is in a room
+        if rooms.values().any(|room| room.contains(pos)) {
+            // If amphipod does not have clear path to room entrance, continue
+            if (1..*y).rev().any(|y_| board[&(*x, y_)] != '.') { continue; }
+        
+            // Walking horizontally from room entrance in each direction, 
+            // stopping if encountering non-clear space,
+            // for each hallway position that can be moved to
+
+            // Walk left
+            let mut step_count = *y as i128 - 1;
+            for x_ in (1..(x - 1)).rev() {
+                let next = (x_, 1);
+                step_count += 1;
+
+                // If occupied, the path is blocked and we should stop searching for neighbours
+                if board[&next] != '.' { break; }
+
+                // We can't stop at spaces outside rooms so we should skip those
+                if SPACES_OUTSIDE_ROOMS.contains(&next) { continue; }
+
+                // Add a neighbour
+                let mut new_board = board.clone();
+                new_board.insert(*pos, '.');
+                new_board.insert(next, *c);
+                result.push((new_board, step_count * cost(c), next));
+            }
+
+            // Walk right
+            let mut step_count = *y as i128 - 1;
+            for x_ in (x + 1)..12 {
+                let next = (x_, 1);
+                step_count += 1;
+
+                // If occupied, the path is blocked and we should stop searching for neighbours
+                if board[&next] != '.' { break; }
+
+                // We can't stop at spaces outside rooms so we should skip those
+                if SPACES_OUTSIDE_ROOMS.contains(&next) { continue; }
+
+                // Add a neighbour
+                let mut new_board = board.clone();
+                new_board.insert(*pos, '.');
+                new_board.insert(next, *c);
+                result.push((new_board, step_count * cost(c), next));
+            }
+        }
+
+        // If amphipod is in a hallway position
+        if HALLWAY.contains(pos) {
+            let room = &rooms[c];
+
+            // If first room position is blocked, continue
+            if board[&room[0]] != '.' { continue; }
+
+            // If room contains amphipod of other type, continue
+            if room.iter().any(|rpos| board[rpos] != *c && board[rpos] != '.') { continue; }
+
+            // Check if amphipod has clear path to room entrance
+            let rx = room[0].0;
+            let path: Vec<_> = if *x < rx { 
+                ((x + 1)..=rx).collect() 
+            } else { 
+                (rx..(x - 1)).rev().collect() 
+            };
+            if path.iter().any(|&x_| board[&(x_, 1)] != '.') { continue; }
+
+            // For each room position corresponding to the amphipod type, starting with outermost
+            let mut step_count = (rx - x).abs() as i128;
+            for next in room {
+                // If room is clear, add a neighbour
+                if board[next] != '.' { break; }
+                step_count += 1;
+
+                // Add a neighbour
+                let mut new_board = board.clone();
+                new_board.insert(*pos, '.');
+                new_board.insert(*next, *c);
+                result.push((new_board, step_count * cost(c), *next));
+            }
         }
     }
 
@@ -306,6 +403,17 @@ mod tests {
     }
 
     #[test]
+    fn test_simple_neighbours2() {
+        let input = 
+            "#############\n\
+            #.A.........#\n\
+            ###.#B#C#D###\n\
+            ###A#B#C#D#";
+
+        assert_map2(input, 2, 2);
+    }
+
+    #[test]
     fn test_simple2() {
         let input = 
             "#############\n\
@@ -314,6 +422,17 @@ mod tests {
             ###A#B#C#D#";
 
         assert_map(input, 10, 2);
+    }
+
+    #[test]
+    fn test_simple2_neighbours2() {
+        let input = 
+            "#############\n\
+            #.....B.....#\n\
+            ###A#.#C#D###\n\
+            ###A#B#C#D#";
+
+        assert_map2(input, 20, 2);
     }
 
     #[test]
@@ -431,6 +550,88 @@ mod tests {
     }
 
     #[test]
+    fn test_example_path_neighbours2() {
+        let start =  
+            "#############\n\
+            #...........#\n\
+            ###B#C#B#D###\n\
+            ###A#D#C#A#";
+
+        let neighbour = 
+            "#############\n\
+            #...B.......#\n\
+            ###B#C#.#D###\n\
+            ###A#D#C#A#";
+        assert_eq!(is_neighbour2(start, neighbour, 2), true);
+
+        /*
+        let start = neighbour;
+        let neighbour = 
+            "#############\n\
+            #.....B.....#\n\
+            ###B#C#.#D###\n\
+            ###A#D#C#A#";
+        assert_eq!(is_neighbour(start, neighbour, (7, 1), 2), true);
+
+        let start = neighbour;
+        let neighbour = 
+            "#############\n\
+            #....B......#\n\
+            ###B#C#.#D###\n\
+            ###A#D#C#A#";
+        assert_eq!(is_neighbour(start, neighbour, (6, 1), 2), true);
+
+        let start = neighbour;
+        let neighbour = 
+            "#############\n\
+            #...B.......#\n\
+            ###B#C#.#D###\n\
+            ###A#D#C#A#";
+        assert_eq!(is_neighbour(start, neighbour, (5, 1), 2), true);
+
+        let start = neighbour;
+        let neighbour = 
+            "#############\n\
+            #...BC......#\n\
+            ###B#.#.#D###\n\
+            ###A#D#C#A#";
+        assert_eq!(is_neighbour(start, neighbour, (4, 1), 2), true);
+
+        let start = neighbour;
+        let neighbour = 
+            "#############\n\
+            #...B.C.....#\n\
+            ###B#.#.#D###\n\
+            ###A#D#C#A#";
+        assert_eq!(is_neighbour(start, neighbour, (5, 1), 2), true);
+
+        let start = neighbour;
+        let neighbour = 
+            "#############\n\
+            #...B..C....#\n\
+            ###B#.#.#D###\n\
+            ###A#D#C#A#";
+        assert_eq!(is_neighbour(start, neighbour, (6, 1), 2), true);
+
+        let start = neighbour;
+        let neighbour = 
+            "#############\n\
+            #...B.......#\n\
+            ###B#.#C#D###\n\
+            ###A#D#C#A#";
+        assert_eq!(is_neighbour(start, neighbour, (7, 1), 2), true);
+
+        let start = neighbour;
+        let neighbour = 
+            "#############\n\
+            #...B.......#\n\
+            ###B#D#C#D###\n\
+            ###A#.#C#A#";
+        assert_eq!(is_neighbour(start, neighbour, (7, 2), 2), true);
+        */
+    }
+
+    #[test]
     fn test_move_up_inside_room() {
         let start = 
             "#############\n\
@@ -464,12 +665,29 @@ mod tests {
         assert_eq!(result.unwrap(), expected_score);
     }
 
+    fn assert_map2(input: &str, expected_score: i128, room_size: usize) {
+        let board = parse_input(input);
+        let result = shortest_path(neighbours2, zero_heuristic, board, goal(room_size as usize), room_size);
+        assert_eq!(result.is_some(), true);
+        assert_eq!(result.unwrap(), expected_score);
+    }
+
     fn is_neighbour(board: &str, neighbour: &str, mover: Pos, room_size: usize) -> bool {
         let board = parse_input(board);
         let neighbour = parse_input(neighbour);
         let rooms = create_rooms(room_size);
 
         neighbours(&board, mover, &rooms)
+            .iter()
+            .any(|(n, _, _)| n == &neighbour)
+    }
+
+    fn is_neighbour2(board: &str, neighbour: &str, room_size: usize) -> bool {
+        let board = parse_input(board);
+        let neighbour = parse_input(neighbour);
+        let rooms = create_rooms(room_size);
+
+        neighbours2(&board, (-1, -1), &rooms)
             .iter()
             .any(|(n, _, _)| n == &neighbour)
     }
