@@ -24,7 +24,7 @@ const HALLWAY: [Pos; 7] = [
 
 fn star1(input: String) -> i128 {
     let board = parse_input(&input);
-    shortest_path(neighbours, heuristic, board, goal(2), 2).unwrap()
+    shortest_path(neighbours, zero_heuristic, board, goal(2), 2).unwrap()
 }
 
 fn zero_heuristic(_board: &Board, _room_size: usize) -> i128 {
@@ -260,61 +260,6 @@ fn display(board: &Board) {
     println!();
 }
 
-fn heuristic(board: &Board, room_size: usize) -> i128 {
-    let targets: HashMap<char, Vec<_>> = hashmap!{
-        'A' => (0..room_size).map(|i| (3 as i16, 2 + i as i16)).collect(),
-        'B' => (0..room_size).map(|i| (5 as i16, 2 + i as i16)).collect(),
-        'C' => (0..room_size).map(|i| (7 as i16, 2 + i as i16)).collect(),
-        'D' => (0..room_size).map(|i| (9 as i16, 2 + i as i16)).collect(),
-    };
-
-    let mut marked = hashset!{};
-
-    // Set result sum to 0
-    let mut result = 0;
-
-    // Go through each target position, starting with
-    // innermost position in each room
-    for i in (0..room_size).rev() {
-        for c in "ABCD".chars() {
-            let target: (i16, i16) = targets[&c][i];
-
-            // Flood fill from target position, terminating
-            // when finding closest applicable amphipod
-            // that is not already marked
-            let mut open = hashset!{target};
-            let mut closed = hashset!{};
-            let mut dist = hashmap!{target => 0};
-            while !open.is_empty() {
-                let current = *open.iter().next().unwrap();
-                open.remove(&current);
-                closed.insert(current);
-                let cur_c = board[&current];
-
-                if cur_c == c && !marked.contains(&current) {
-                    result += dist[&current];
-                    marked.insert(current);
-                    break;
-                }
-
-                // Find neighbours
-                let (x, y) = current;
-                let adjacent: Vec<_> = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)].into_iter()
-                    .filter(|pos| board.contains_key(&pos) && !closed.contains(&pos))
-                    .collect();
-
-                for n in adjacent {
-                    dist.insert(n, dist[&current] + 1);
-                    open.insert(n);
-                }
-            }
-        }
-    }
-
-    // Return result sum
-    result
-}
-
 fn star2(input: String) -> i128 {
     let board = parse_input(&input);
     shortest_path(neighbours, zero_heuristic, board, goal(4), 4).unwrap()
@@ -359,7 +304,7 @@ mod tests {
             #...B.......#\n\
             ###B#C#.#D###\n\
             ###A#D#C#A#";
-        assert_eq!(is_neighbour2(start, neighbour, 2, 40), true);
+        assert_eq!(is_neighbour(start, neighbour, 2, 40), true);
 
         /*
         let start = neighbour;
@@ -442,17 +387,17 @@ mod tests {
 
     fn assert_map2(input: &str, expected_score: i128, room_size: usize) {
         let board = parse_input(input);
-        let result = shortest_path(neighbours2, zero_heuristic, board, goal(room_size as usize), room_size);
+        let result = shortest_path(neighbours, zero_heuristic, board, goal(room_size as usize), room_size);
         assert_eq!(result.is_some(), true);
         assert_eq!(result.unwrap(), expected_score);
     }
 
-    fn is_neighbour2(board: &str, neighbour: &str, room_size: usize, expected_cost: i128) -> bool {
+    fn is_neighbour(board: &str, neighbour: &str, room_size: usize, expected_cost: i128) -> bool {
         let board = parse_input(board);
         let neighbour = parse_input(neighbour);
         let rooms = create_rooms(room_size);
 
-        let ns = neighbours2(&board, &rooms);
+        let ns = neighbours(&board, &rooms);
 
         ns.iter().any(|(n, cost)| {
             if n == &neighbour {
