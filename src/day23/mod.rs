@@ -13,7 +13,11 @@ type Board = BTreeMap<Pos, char>;
 
 fn star1(input: String) -> i128 {
     let board = parse_input(&input);
-    shortest_path(neighbours, board, goal(2), 2).unwrap()
+    shortest_path(neighbours, zero_heuristic, board, goal(2), 2).unwrap()
+}
+
+fn zero_heuristic(board: &Board, room_size: usize) -> i128 {
+    0
 }
 
 fn parse_input(input: &str) -> Board {
@@ -44,14 +48,15 @@ use std::collections::BinaryHeap;
 
 #[derive(Clone, Eq, PartialEq)]
 struct State {
-    cost: i128,
+    g: i128,
+    f: i128,
     position: Board,
     previous_mover: Pos,
 }
 
 impl Ord for State {
     fn cmp(&self, other: &Self) -> Ordering {
-        other.cost.cmp(&self.cost)
+        other.f.cmp(&self.f)
     }
 }
 
@@ -63,32 +68,46 @@ impl PartialOrd for State {
 
 fn shortest_path(
     neighbours_fn: fn (&Board, Pos, i16) -> Vec<(Board, i128, Pos)>, 
+    h: fn (&Board, usize) -> i128,
     start: Board, 
     goal: Board,
     room_size: i16,
 ) -> Option<i128> {
+    println!("Start: ");
+    display(&start);
+    println!("Goal: ");
     display(&goal);
 
     let mut open = BinaryHeap::new();
-    open.push(State { cost: 0, position: start.clone(), previous_mover: (-1, -1) });
-    let mut g = hashmap!{ start => 0 };
+    open.push(State {
+        g: 0, 
+        f: h(&start, room_size as usize), 
+        position: start.clone(), 
+        previous_mover: (-1, -1) }
+    );
+    let mut dist = hashmap!{ start => 0 };
 
-    while let Some(State { cost, position, previous_mover }) = open.pop() {
-        // println!("current, with cost {}: ", cost);
-        // display(&position);
-        if position == goal { return Some(cost); }
+    let mut count = 0;
+    while let Some(State { g, f, position, previous_mover }) = open.pop() {
+        count += 1;
 
-        if cost > g[&position] { continue; }
+        if position == goal { 
+            println!("Visited nodes: {}", count);
+            return Some(g); 
+        }
+
+        if g > dist[&position] { continue; }
 
         for (n, n_cost, mover) in neighbours_fn(&position, previous_mover, room_size) {
             // println!("neighbour with cost {}: ", n_cost);
             // display(&n);
-            let tentative_g = cost + n_cost;
+            let tentative_g = g + n_cost;
 
-            if !g.contains_key(&n) || tentative_g < *g.get(&n).unwrap() {
+            if !dist.contains_key(&n) || tentative_g < *dist.get(&n).unwrap() {
                 //println!("Best path so far, total cost is {}, updating", tentative_g);
-                let next = State { cost: tentative_g, position: n, previous_mover: mover };
-                g.insert(next.position.clone(), next.cost);
+                let f = tentative_g + h(&n, room_size as usize);
+                let next = State { g: tentative_g, f, position: n, previous_mover: mover };
+                dist.insert(next.position.clone(), tentative_g);
                 open.push(next);
             } else {
                 //println!("Total cost {} is worse than best path, ignoring", tentative_g);
@@ -173,11 +192,12 @@ fn neighbours(board: &Board, previous_mover: Pos, room_size: i16) -> Vec<(Board,
 }
 
 fn has_clear_path(board: &Board, start: Pos, end: Pos) -> bool {
-    let mut open = vec![start];
+    let mut open = hashset!{start};
     let mut closed = HashSet::new();
 
     while !open.is_empty() {
-        let (x, y) = open.pop().unwrap();
+        let (x, y) = *open.iter().next().unwrap();
+        open.remove(&(x, y));
         let neighbours: Vec<_> = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)].into_iter()
             .filter(|pos| board.contains_key(&pos) && board[&pos] == '.')
             .collect();
@@ -191,7 +211,7 @@ fn has_clear_path(board: &Board, start: Pos, end: Pos) -> bool {
                 continue;
             }
 
-            open.push(n);
+            open.insert(n);
         }
 
         closed.insert((x, y));
@@ -201,7 +221,9 @@ fn has_clear_path(board: &Board, start: Pos, end: Pos) -> bool {
 }
 
 fn display(board: &Board) {
-    for y in 0..5 {
+    let max_y = board.keys().map(|(_, y)| *y).max().unwrap();
+
+    for y in 0..=max_y {
         for x in 0..13 {
             if board.contains_key(&(x, y)) {
                 print!("{}", board[&(x, y)]);
@@ -214,10 +236,65 @@ fn display(board: &Board) {
     println!();
 }
 
+fn heuristic(board: &Board, room_size: usize) -> i128 {
+    let targets: HashMap<char, Vec<_>> = hashmap!{
+        'A' => (0..room_size).map(|i| (3 as i16, 2 + i as i16)).collect(),
+        'B' => (0..room_size).map(|i| (5 as i16, 2 + i as i16)).collect(),
+        'C' => (0..room_size).map(|i| (7 as i16, 2 + i as i16)).collect(),
+        'D' => (0..room_size).map(|i| (9 as i16, 2 + i as i16)).collect(),
+    };
+
+    let mut marked = hashset!{};
+
+    // Set result sum to 0
+    let mut result = 0;
+
+    // Go through each target position, starting with
+    // innermost position in each room
+    for i in (0..room_size).rev() {
+        for c in "ABCD".chars() {
+            let target: (i16, i16) = targets[&c][i];
+
+            // Flood fill from target position, terminating
+            // when finding closest applicable amphipod
+            // that is not already marked
+            let mut open = hashset!{target};
+            let mut closed = hashset!{};
+            let mut dist = hashmap!{target => 0};
+            while !open.is_empty() {
+                let current = *open.iter().next().unwrap();
+                open.remove(&current);
+                closed.insert(current);
+                let cur_c = board[&current];
+
+                if cur_c == c && !marked.contains(&current) {
+                    result += dist[&current];
+                    marked.insert(current);
+                    break;
+                }
+
+                // Find neighbours
+                let (x, y) = current;
+                let adjacent: Vec<_> = [(x - 1, y), (x + 1, y), (x, y - 1), (x, y + 1)].into_iter()
+                    .filter(|pos| board.contains_key(&pos) && !closed.contains(&pos))
+                    .collect();
+
+                for n in adjacent {
+                    dist.insert(n, dist[&current] + 1);
+                    open.insert(n);
+                }
+            }
+        }
+    }
+
+    // Return result sum
+    result
+}
+
 
 fn star2(input: String) -> i128 {
     let board = parse_input(&input);
-    shortest_path(neighbours, board, goal(3), 3).unwrap()
+    shortest_path(neighbours, heuristic, board, goal(4), 4).unwrap()
 }
 
 #[cfg(test)]
@@ -389,7 +466,7 @@ mod tests {
 
     fn assert_map(input: &str, expected_score: i128, room_size: i16) {
         let board = parse_input(input);
-        let result = shortest_path(neighbours, board, goal(room_size as usize), room_size);
+        let result = shortest_path(neighbours, zero_heuristic, board, goal(room_size as usize), room_size);
         assert_eq!(result.is_some(), true);
         assert_eq!(result.unwrap(), expected_score);
     }
